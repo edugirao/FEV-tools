@@ -1,0 +1,472 @@
+\documentclass{scrreprt}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{cprotect}
+\usepackage[english]{babel}
+\usepackage{url}
+
+\usepackage{listings}
+\usepackage{underscore}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\hypersetup{
+    bookmarks=false,    % show bookmarks bar?
+    pdftitle={FEVtools},    % title
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=blue,       % color of internal links
+    citecolor=black,       % color of links to bibliography
+    filecolor=black,        % color of file links
+    urlcolor=black,        % color of external links
+    linktoc=page            % only page is linked
+}%
+\def\myversion{1.0 }
+\date{}
+%\title{%
+
+%}
+\usepackage{hyperref}
+\begin{document}
+
+\begin{flushleft}
+    \rule{16cm}{5pt}\vskip1cm
+    \begin{bfseries}
+        \Huge{FEVtools}\\
+        \vspace{1.5cm}
+        User Guide\\
+        \vspace{1.5cm}
+        \LARGE{Version \myversion}\\
+        \vspace{1.5cm}
+        \today\\
+    \end{bfseries}
+\end{flushleft}
+
+\vspace{2cm}
+
+\begin{center}
+\includegraphics[width=0.5\columnwidth]{./figs/fevtools.pdf}
+\end{center}
+
+
+
+\tableofcontents
+
+\chapter{The Emedding Tensor and the Flag-Graph}
+
+The \emph{Embedding Tensor} consists of a cuboid data structure $\Phi$ with elements $\Phi_{f,e,v}$, where the $f$/$e$/$v$ indexes label the faces/edges/vertices of the system. These elements are given by:
+\begin{equation}
+\Phi_{f,e,v} = \begin{cases}
+    1, & \textrm{if vertex $v$ is contained in edge $e$}\\
+    & \textrm{and edge $e$ is contained in face $f$, and} \\
+    0,              & \text{otherwise.}
+\end{cases}
+\end{equation}
+The labelling of the face/edge/vertex objects is illustrated for the structure in Fig.~\ref{fev-labelling}a, where we label the 6 vertices by black color numbers, the 9 edges by blue color integers and the 3 faces by red color values. Note that we must obey periodic boundary conditions, so that the four octagons centered on the corners of the unit cell are actually the same face (face 3), as well as the two squares cut by the horizontal limits of the rectangular cell (face 2). This also applies to the edges, as edge 9 cuts both vertical limits of the unit cell, similarly to edges 7 and 8, that cut both horizontal boundaries. The embedding tensor for this structure is illustrated in Fig.~\ref{fev-labelling}b. Note, for instance, that $\Phi_{3,7,1}=1$ (see green circle in Fig.~\ref{fev-labelling}b), as vertex 1 and edge 7 both make part of face 3, as well as edge 7 contains vertex 1.
+
+\begin{figure}[ht!]
+\includegraphics[width=\columnwidth]{./figs/fev-labelling.pdf}
+\caption{(a) Illustration of how faces (red numbers), edges (blue numbers), and vertices (black numbers) are labelled over a biphenylene periodic system. (b) Tensor cuboid data structure for biphenylene, where $\Phi_{f,e,v}=1$/$\Phi_{f,e,v}=0$ entries are represented by blue/red cubes. The green circle highilights the $\Phi_{3,7,1}=1$ element. (c) Graphical representation of the $(1,2,3)$ flag, and its clockwise orientation. (d) Graphical representation of the $(1,4,4)$ flag, and its counterclockwise orientation.}
+\label{fev-labelling}
+\end{figure} 
+
+Each nonzero element of the embedding tensor defines one an entity called a \emph{flag}. When the involved edge is a bridge, each nonzero tensor element defines a pair of twin flags. A flag can be represented graphically over the structure by an arrow that emerges from the corresponding vertex, along its corresponding edge, and has a mark (two small parallel segments) towards the corresponding cell. It also defines either a clockwise or a counterclockwise orientation around the face. In Fig.~\ref{fev-labelling} we illustrate the $(1,2,3) flag$, where the blue color of the flag symbol and the blue clockwisely oriented circle indicate its orientation. In Fig.~\ref{fev-labelling}d we illustrate the counterclockwisely oriented $(1,4,4)$ in red color.
+
+Each flag has neighboring flags, with which they share two elements in common. Each flag has a face-neighbor (same $e$ and $v$), an edge-neighbor (same $f$ and $v$), and a vertex-neighbor (same $f$ and $e$).  When we connect each flag to its neighbors, we have what we define as the flag-graph.
+
+
+
+
+\chapter{File formats}
+
+\section{The .fev format}
+
+In \textsc{FEVtools}, the embedding tensor it exchanged with the user through a \verb-.fev- file. This format is decribed below:
+\begin{itemize}
+ \item A first line containing the three integers \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of faces, edges and vertices of the tensor, respectively;
+ \item One line for each tensor entry (either 0 or 1), where the elements are ordered in a nested triple-loop, where the innermost (outermost) loop runs over the vertices (faces).
+\end{itemize}
+A simple \textsc{FORTRAN} code reads the tensor from a \verb-.fev- file with \verb-UNIT=1- as illustrated below: 
+\begin{verbatim}
+READ(1,*) nf,ne,nv          ! .fev file format:
+DO i=1,nf                   ! - 1st line: nf ne nv
+  DO j=1,ne                 ! - Then one line per each tensor entry (0 or 1)
+    DO l=1,nv               ! -> Outer loop --> Faces
+      READ(1,*) fev(i,j,l)  ! -> Middle loop -> Edges
+    END DO                  ! -> Inner loop --> Vertices
+  END DO                    !
+END DO   
+\end{verbatim}
+
+The \verb-.fev- is an easy way for the user to input the studied structure. Other formats are more adequated to obtain further information, but they can be extracted from the \verb-.fev- file from specific tools.
+
+\section{The .flg format}
+A flag is defined as a $(f,e,v)$ integer trio for which $\Phi_{f,e,v}=1$ (eventually we can have twin flags with $(f',e',v')=(f,e,v)$). They form a flag-graph that can be extracted from a given embedding tensor, and consists of: 1) the list of flags, 2) the list of face-, edge-, and vertex-neighbors of each flag, and 3) the flags orientations. In \textsc{FEVtools}, the flag-graph of a system can be exchanged with the user through a \verb-.flg- file. This format is decribed below:
+\begin{itemize}
+ \item A first line containing the four integers \verb-nflags-, \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of flags, faces, edges and vertices of the stucture, respectively;
+ \item A second line containing a vector with the number of edges from each face of the structure.
+ \item In the following we have one line per flag, containing 7 integers: 1-3) the $f$, $e$, and $v$ elements of the flag, 4-6) its face-, edge-, and vertex neighbor flags, and 7) the flag orientation (eithe +1 or -1).
+\end{itemize}
+In \textsc{FORTRAN} it can be read as: 
+\begin{verbatim}
+READ(1,*) nflags,nf,ne,nv
+READ(1,*) nface
+DO i=1,nflags
+  READ(1,*) flag(i,:),neigh_flag(i,:),flag_color(i)
+END DO 
+\end{verbatim} 
+where \verb-flag- and \verb-neigh_flag- are \verb-nflag-$\times$3 matrices. An alternative \verb-.b.flg- format is written/read in binary form in \textsc{FORTRAN} as
+\begin{verbatim}
+READ(1) nflags,nf,ne,nv
+READ(1) nface
+READ(1) flag
+READ(1) neigh_flag
+READ(1) flag_color
+\end{verbatim} 
+
+The \verb-.flg- format is convenient to find symmetry maps that enable us to determine the symmetry group of a given structure or to determine if tow structures are equivalent or not.
+
+\section{The .fcs format}
+The faces-info format contains structural information relative to each face of the system. In \textsc{FEVtools}, it can be exchanged with the user through a \verb-.fcs- file. This format is decribed below:
+\begin{itemize}
+ \item A first line containing the four integers \verb-nf-, \verb-ne-, \verb-nv-, and \verb-nmax-, corresponding to the number of faces, edges, vertices of the structure, and the maximal number of edges in a face, respectively;
+ \item Then we have blocks of 6 lines, one for each faces of the structure. Each block contains:
+ \begin{enumerate}
+  \item The number of edges in the face and a logical (\verb-T- or \verb-F-) value indicating if the face is a representative face (\verb-T-) or if it is symmetry related to a representative one (\verb-F-);
+  \item The faces touching the reference face;
+  \item The edge forming the reference face;
+  \item The vertices forming the reference face;
+  \item Logical entries indicating if the edges forming the face are bridges or not;
+  \item A set of logical values (one for each edge of the face) indicating if the edge is a representative face (\verb-T-) or if it is symmetry related to a representative one (\verb-F-) within the face.
+ \end{enumerate}
+\end{itemize}
+
+The vertices forming the reference face \verb-i- are stored in a \verb-v_in_f(i,j)- vector, in which \verb-j- runs from 1 to the face size \verb-n-. The same applies to the edges forming face \verb-i-, which are stored in the \verb-e_in_f(i,j)- vector, and to the faces touching face \verb-i-, stored in the \verb-f_in_f(i,j)- vector, always with \verb-j=1,...,n-. All the elements in \verb-f_in_f-, \verb-e_in_f-, and \verb-v_in_f- vectors have to be ordered around the face. This is done in such a way that the \verb-j--th edge from face \verb-i- starts in vertex \verb-v_in_f(i,j)- and finishes in vertex \verb-v_in_f(i,j+1)-, while the \verb-j=n--th edge (\verb-n- the size of face \verb-i-) starts in vertex \verb-v_in_f(i,n)- and finishes in vertex \verb-v_in_f(i,1)-. The \verb-j--th edge (\verb-e_in_f(i,j)-) is also the frontier between faces \verb-i- and \verb-f_in_f(i,j)-.
+ 
+For instance, look at the example from Fig.~\ref{fcs-format}a, where the reference face is \verb-i=7-. Its starting elements are \verb-  f_in_f(7,1)=4-, \verb-e_in_f(7,1)=7-, and \verb-v_in_f(7,1)=2- (elements within the green curve). In the following, we have \verb-f_in_f(7,2)=6-, \verb-e_in_f(7,2)=1-, and \verb-v_in_f(7,2)=5- (elements within the orange path). Explicitly, we can write
+\begin{verbatim}
+v_in_f(7,1:8) = [2, 5, 3, 7, 1, 6, 8, 4]
+e_in_f(7,1:8) = [7, 1, 8, 2, 4, 6, 5, 3]
+f_in_f(7,1:8) = [4, 6, 9, 8, 3, 1, 5, 2]
+\end{verbatim}
+In this example, no edges are bridges, so that
+\begin{verbatim}
+b_in_f(7,1:8) = [F, F, F, F, F, F, F, F]
+\end{verbatim}
+Suppose only edges 4 and 7 are equivalent by symmetry, then \verb-u_in_f(7,1)=T- (relative to edge \verb-e=7-) and \verb-u_in_f(7,5)=F- (relative to edge \verb-e=4-), since edge 7 is the first, and edge 4 is the fifth to appear in the sequence around the face (\verb-u_in_f(7,j)=T- for all the other \verb-j- values different from 1 and 5, since there are no more equivalent edges). Explicitly:
+In this example, no edges are bridges, so that
+\begin{verbatim}
+u_in_f(7,1:8) = [T, T, T, T, F, T, T, T]
+\end{verbatim}
+
+Let us now consider the example from Fig.~\ref{fcs-format}b, which features a bridge. In this case, edge \verb-e=2- appears twice around \verb-f=7-, and we have 
+\begin{verbatim}
+v_in_f(7,1:8) = [2, 5, 3, 2, 4, 6, 1, 4]
+e_in_f(7,1:8) = [7, 1, 3, 2, 4, 6, 5, 2]
+f_in_f(7,1:8) = [4, 6, 2, 7, 3, 1, 5, 7]
+\end{verbatim}
+Since edge 2 is a bridge, \verb-b_in_f(7,4)=T- and \verb-b_in_f(7,8)=T-, while \verb-b_in_f(7,i)=F- for the other values. As they are the same edge, \verb-e_in_f(7,4)=e_in_f(7,8)=2- are equivalent so that \verb-u_in_f(7,4)=T- and \verb-u_in_f(7,8)=F- since it appears firstly on the 4-th position. Explicitly
+\begin{verbatim}
+b_in_f(7,1:8) = [F, F, F, T, F, F, F, T]
+u_in_f(7,1:8) = [T, T, T, T, T, T, T, F]
+\end{verbatim}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.8\columnwidth]{./figs/fcs-format.pdf}
+\caption{(a) Illustration of the sequence of neighboring faces, and composing edges and vertices of a given face (face 7). For the face \protect\url{i=7} with size \protect\url{n=8}, \protect\url{v_in_f(7,1:8)} contains 2, 5, 3, 7, 1, 6, 8, and 4 in this order, while \protect\url{e_in_f(7,1:8)} contains 7, 1, 8, 2, 4, 6, 5, and 3, as well as \protect\url{f_in_f(7,1:8)} contains 4, 6, 9, 8, 3, 1, 5, and 2. The green curve highilights the \protect\url{f_in_f(7,1)=4}, \protect\url{e_in_f(7,1)=7}, and \protect\url{v_in_f(7,1)=2} elements, while the orange curve highlights the \protect\url{f_in_f(7,2)=6}, \protect\url{e_in_f(7,2)=1}, and \protect\url{v_in_f(7,2)=5} elements. (b) Same as (a), but an example with a bridge, where \protect\url{v_in_f(7,1:8)} contains 2, 5, 3, 2, 4, 6, 1, and 4, \protect\url{e_in_f(7,1:8)} contains 7, 1, 3, 2, 4, 6, 5, and 2, and \protect\url{f_in_f(7,1:8)} contains 4, 6, 2, 7, 3, 1, 5, and 7.}
+\label{fcs-format}
+\end{figure} 
+
+In \textsc{FORTRAN} it can be read as: 
+\begin{verbatim}
+READ(1,*) nf,ne,nv,nmax
+DO i=1,nf
+  READ(1,*) nface(i),uneq_face(i)
+  READ(1,*) f_in_f(i,1:nface(i))
+  READ(1,*) e_in_f(i,1:nface(i))
+  READ(1,*) v_in_f(i,1:nface(i))
+  READ(1,*) b_in_f(i,1:nface(i))
+  READ(1,*) u_in_f(i,1:nface(i))
+END DO
+\end{verbatim} 
+where \verb-f_in_f- is a \verb-nf-$\times$\verb-nmax- matrix, just as \verb-e_in_f- and the others. An alternative \verb-.b.fcs- format is written/read in binary form in \textsc{FORTRAN} as
+\begin{verbatim}
+READ(1) nf,ne,nv,nmax
+DO i=1,nf
+  READ(1) nface(i),uneq_face(i)
+  READ(1) f_in_f(i,1:nface(i))
+  READ(1) e_in_f(i,1:nface(i))
+  READ(1) v_in_f(i,1:nface(i))
+  READ(1) b_in_f(i,1:nface(i))
+  READ(1) u_in_f(i,1:nface(i))
+END DO
+\end{verbatim} 
+
+The \verb-.fcs- format is convenient to conduct structure generation through an add dimer approach.
+
+\chapter{Using \textsc{FEVtools}}
+
+\textsc{FEVtools} is a \textsc{FORTRAN} package of applications that includes a total of 15 tools:
+\begin{itemize}
+ \item \verb-fev2fcs-: tensor to faces-info conversion; 
+ \item \verb-fev2flg-: tensor to flag-graph conversion;
+ \item \verb-fev2pov-: Tensor illustration generation in POVRAY; 
+ \item \verb-fev2sum-: computes sum rules for a tensor;  
+ \item \verb-fcs2fev-: faces-info to tensor conversion;
+ \item \verb-fcs2flg-: faces-info to flag-graph conversion; 
+ \item \verb-fcs2kid-: structure generation;
+ \item \verb-fcs2smb-: polygonal symbol generation;
+ \item \verb-fcs2xyz-: coordinates generation;
+ \item \verb-flg2fcs-: flag-graph to faces-info conversion; 
+ \item \verb-flg2fev-: flag-graph to tensor conversion;
+ \item \verb-flg2iso-: isomorphism checking; 
+ \item \verb-flg2pri-: reduction to primitive cell; 
+ \item \verb-flg2sym-: computes the symmetry group from a flag-graph;
+ \item \verb-for2bin-: Formatted to unformatted format conversion (and vice-versa).
+\end{itemize}
+A fluxogram detailing the tools and their purposes is illustrated in Fig.~\ref{fev-summary}. We detail the use of each of the in the next sections.
+
+\begin{figure}[ht!]
+\includegraphics[width=\columnwidth]{./figs/summary.pdf}
+\caption{Summary of the utilities of the \textsc{FEVtools} package.}
+\label{fev-summary}
+\end{figure} 
+
+To compile it, just edit the \verb-makefile- indicating your \textsc{FORTRAN} compiler and type \verb-make- to build all the 13 tools.
+
+\section{Extracting the flag-graph from the embedding tensor}
+
+Use the \verb-fev2flg- executable to create \verb-.flg- and \verb-.b.flg- files from the \verb-.fev- file from a given structure. In addition to the \verb-systemlabel.fev- file, you have to have the \verb-fev2flg- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. Just execute it with
+\begin{verbatim}
+./fev2flg
+\end{verbatim}
+to make the conversion. If there are two or more non-equivalent flag-graphs associated with the tensor, it will generate \verb-.flg- and \verb-.b.flg- files for them all. In that case, the files for the first graph (structure) will be named as \verb-systemlabel.flg- and \verb-systemlabel.b.flg-, while the files for the second one will be named as \verb-systemlabel_2.flg- and \verb-systemlabel_2.b.flg-, and so on.
+
+\section{Extracting the embedding tensor from the flag-graph}
+
+Use the \verb-flg2fev- executable to create \verb-.fev- file from the \verb-.flg- file from a given structure. In addition to the \verb-systemlabel.flg- file, you have to have the \verb-flg2fev- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder.
+
+\textbf{IMPORTANT NOTE} More than being used for \verb-.flg- to \verb-.fev- conversion, it can be used as a tool to build the \verb-.fev- file for a structure that you draw on a sheet of paper, for example. In you drawing, enumerate all the elements and create a ``fake'' \verb-.flg- with the list of flags. For the \verb-nface-, \verb-neigh_flag-, and \verb-flag_color- entries, write anything, they do not matter to build the embedding tensor. However, after generating the \verb-.fev- from your drawing from your face \verb-.flg-, you have to run \verb-fev2flg- to create the corret \verb-.flg- file.
+
+\section{Isomorphism checking}
+
+Use the \verb-flg2iso- executable to verify if there is an isomorphism relation between two structures. You will need the \verb-.flg- files for the two systems and the \verb-inp- file hs to have the \verb-systemlabel- strings for both systems (one per line). Upon execution, the program will print a message saying
+\begin{verbatim}
+Isomorphic structures.
+\end{verbatim}
+or
+\begin{verbatim}
+Non-isomorphic structures.
+\end{verbatim}
+on the screen.
+
+\section{Extracting the faces-info data from the flag-graph}
+
+Use the \verb-flg2fcs- executable to create \verb-.fcs- and \verb-.b.fcs- files from the \verb-.flg- file from a given structure. In addition to the \verb-systemlabel.flg- file, you have to have the \verb-flg2fcs- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder.
+
+\section{Extracting the faces-info from the embedding tensor}
+
+The \verb-fev2fcs- was created just for completeness. In fact, it is a \verb-fev- to \verb-flg- to \verb-fcs- tool that has the same effect of executing \verb-fev2flg- and then \verb-flg2fcs- for each flag graph extracted for the embedding tensor. You use it just as you use \verb-fev2flg-, but as a result, you will obtain the \verb-.flg-, \verb-.b.flg-, \verb-.fcs-, and \verb-.b.fcs- files for all the possible structures that can be extracted from the \verb-.fev- file.
+
+\section{Extracting the flag-graph data from the faces-info}
+
+Use the \verb-fcs2flg- executable to create \verb-.flg- and \verb-.b.flg- files from the \verb-.fcs- file from a given structure. It is the opposite of \verb-flg2fcs- In addition to the \verb-systemlabel.fcs- file, you have to have the \verb-fcs2flg- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder.
+
+\section{Formatted to unformatted file conversion}
+
+The \verb-for2bin- executable checks if the \verb-.flg- and \verb-.b.flg- files for the structure indicated in the \verb-inp- file exist. If only one of them exist, it creates the other. The same is done for the \verb-.fcs- and \verb-.b.fcs- files for the structure indicated in the \verb-inp-.
+
+\section{Extracting the embedding tensor from the faces-info}
+
+Use the \verb-fcs2fev- executable to create \verb-.fev- file from the \verb-.fcs- file from a given structure. In addition to the \verb-systemlabel.fcs- file, you have to have the \verb-fcs2fev- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder.
+
+\section{Creating an illustrative figure of the tensor}
+
+Use the \verb-fev2pov- executable to create a \verb-.pov- file for an illustration of tensor in a perspective view, with 0/1 entries represented by red/blue cubes labelled with their values. It further illustrates the faces/edges/vertices axes in green, and a black background. In addition to the \verb-systemlabel.fev- file, y ou have to have the \verb-fev2pov- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. Just execute it to create the \verb-systemlabel.pov- file.
+
+\section{Computing sum rules for an embedding tensor}
+
+Use the \verb-fev2sum- executable to compute the sum rules for an embedding tensor from a \verb-systemlabel.fev- file and print the results on the screen. In addition to the \verb-systemlabel.fev- file, you have to have the \verb-fev2sum- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. You simply type
+\begin{verbatim}
+./fev2sum
+\end{verbatim}
+and it does the job.
+
+\section{Identifying the symmetry group from the flag-graph}
+
+Use the \verb-flg2sym- executable to identify the symmetry group (printed on the screen). You have to have the \verb-systemlabel.flg- file, the \verb-flg2sym- executable and the \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. The \verb-flg2sym- tool also produces:
+\begin{itemize}
+ \item A \verb-.map- file with the flag-symmetry maps;
+ \item A \verb-.rot- file with structural elements over which we have a symmetry axis, and its order;
+ \item A \verb-.mir- file with the structural elements unchanged under mirror reflexions, and their corresponding maps (a single element can be part of more than one mirror map);
+ \item A \verb-.sym- file with a line containing the symmetry group (also printed on the screen).
+\end{itemize}
+
+\section{Polygonal symbol generation}
+
+Use the \verb-fcs2smb- executable to create the polygonal symbol for the studied structure. You have to have the \verb-systemlabel.fcs- and \verb-systemlabel.sym- files, the \verb-fcs2smb- executable and the \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. The \verb-fcs2smb- tool produces:
+\begin{itemize}
+ \item A \verb-.smb- file with 3 versions of the symbol in latex commands;
+ \item A pdf file for each of the 3 versions of the symbol.
+\end{itemize}
+The first symbol version is the simplest most sintetic one. The second includes subscripts indicating the neighboring faces of each face, but grouped when two faces of the same size have the same set of neighbors. The third is a fully extended one, with subscripts indicating the neighboring faces of each face (not grouping faces with same setof neighbors).
+
+
+\section{Reduction to primitive cell}
+
+Suppose you have a \verb-.fev-, \verb-.flg-, or \verb-.fcs- file for a structure that does not represent a primitive cell. You can construct the \verb-.fev- file for the corresponding primitive cell with \verb-flg2pri-. You have to have the \verb-.flg- file of your structure to make the reduction. In addition to the \verb-systemlabel.flg- file, you have to have the \verb-flg2pri- executable and a \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. Just execute \verb-flg2pri-.
+
+\section{Structure generation}
+
+The \verb-fcs2kid- tool creates a generation of structures with $N+1$ faces from a parent generation of structures with $N$ faces by means of the add dimer algorithm. In order to run it, you have to have 
+\begin{itemize}
+ \item A \verb-gensizeN- file (substitute \verb-N- in the filename by the number of faces) with the number of structures in the database of structures with $N$ faces;
+ \item A \verb-gensystemsN- file (substitute \verb-N- in the filename by the number of faces) with the systemlabel strings (one per line) for the \verb-systemlabel.fcs- files from the database of structures of structures with $N$ faces. In each line, after the system label, we also have three integers, indicating 1) the number of its ancestor in the previous database, 2) the face index in which the dimer was added to generate the present structure, and 3) the number of translation maps (should be 0 for primitive cell files). Note: add 1 1 0 to the graphene system in the \verb-N=1- generation file;
+ \item An \verb-igen- file containing the $N$ value of the parent generation;
+ \item The \verb-.fcs- files for all the structures from the database.
+\end{itemize}
+Once you have the correct files and the fev2kid executable, you just run it with
+\begin{verbatim}
+./fcs2kid 
+\end{verbatim}
+to generate the child generation of structures. It will generate the \verb-.b.flg- and \verb-.b.fcs- files for the new generation.
+
+If you input 0 in \verb-igen-, it will automatically generate the graphene files (labelled as \verb-6-), together with the \verb-gensize1- and \verb-gensystems1- files.
+
+\section{Coordinates generation}
+
+During structure generation with the \verb-fcs2kid- tool, a \verb-.anc- file is also writen for each generated system. It contains 1) the system label of the ancestor system, 2) ancestor's face number in which the dimer is added, and 3) the indexes for the two edges within the face in which we add the dimer atoms.
+
+Suppose we want to generate a rough initial set of coordinates for a given target structure. You can do it with the \verb-fcs2xyz- tool. In order to use it, you will need the following files:
+\begin{itemize}
+ \item An \verb-inp- file with the system label for the target system;
+ \item The \verb-.b.fcs- and \verb-.anc- files for the target system;
+ \item The \verb-.b.fcs-, \verb-.xyz-, and \verb-.nxy- files for the target's ancestor.
+\end{itemize}
+Then you just need to execute
+\begin{verbatim}
+./fcs2xyz 
+\end{verbatim}
+to do it.
+
+The generated \verb-.xyz- file (and the used ancestor's one) contains $x$ and $y$ coordinates between 0 and 1 (fractional coordinates), while $z=0$ for all the atoms. It implicitly considers a pair of lattice vectors
+\begin{equation}
+\mathbf{a}_1=(1,0)\quad\textrm{and}\quad\mathbf{a}_2=(0,1). 
+\end{equation}
+
+The \verb-.nxy- contains blocks of 3 lines, one for each face of the structure. Each block contains:
+\begin{enumerate}
+ \item The number of edges in the face (\verb-i- labels the face);
+ \item The \verb-x_in_f(i,j)- values, with \verb-j- ranging from 1 to the number of edges in the face;
+ \item The \verb-y_in_f(i,j)- values, with \verb-j- ranging from 1 to the number of edges in the face.
+\end{enumerate}
+To understand the meaning of \verb-x_in_f(i,j)- and \verb-y_in_f(i,j)-, suppose the \verb-j--th vertex of face \verb-i- (\verb-v_in_f(i,j)-) is located by the $\mathbf{r}_a$ vector, while the following vertex within the same face (according to the \verb-v_in_f- data) is located by the $\mathbf{r}_b$ vector (both vectors with coordinates within 0 to 1). However, if we eventually cross the $\mathbf{a}_1/\mathbf{a}_2$ cell when moving from the \verb-v_in_f(i,j)- vertex to the next one within the same (\verb-i-) face, then we move from $\mathbf{r}_a$ to $\mathbf{r}_b+x\mathbf{a}_1+y\mathbf{a}_2$, with $x$ being given by \verb-x_in_f(i,j)-, and $y$ given by \verb-y_in_f(i,j)-.
+
+The \verb-fcs2xyz- tool takes the ancestor's coordinates, adds an atom in the center of each ot the edges defining the added dimer, and performs a very simple steepest descent geometry optimization along a set of steps. From the beginning, we know what are the neighbors of each atom and this information does not change (non-reactive optimization). For each geometry step, we calculate the ``force'' $F$ over each atom, and promote a small displacement given by the force multiplied by a ``timestep'' $dt$. The displacement is limited by a tenth of the average distance $d_0$ between neighbors in the system (updated in each geometry step). Such an optimization considers three kinds of forces.
+
+1 - \emph{Elastic bond stretching forces:} a Hooke's law like force given by
+\begin{equation}
+\mathbf{F}_i=-k\frac{(d-d_0)}{d_0}\mathbf{u}_{ij},
+\end{equation}
+where
+\begin{equation}
+\mathbf{u}_{ij}=\frac{\mathbf{r}_i-\mathbf{r}_j}{d}
+\end{equation}
+is the unit vector pointing from $\mathbf{r}_j$ to $\mathbf{r}_i$, $\mathbf{r}_i$ is the position of the atom feeling the force, $\mathbf{r}_j$ is its neighbor position, $d=|\mathbf{r}_i-\mathbf{r}_j|$ is the distance between them, $d_0$ is the average neighbor distance in the system, and $k$ is the force constant.
+
+2 - \emph{Elastic bond angle forces:} a Hooke's law like force for bond angle variation. Consider the atom $i$ located by $\mathbf{r}_i$ and its neighbors $j$ and $l$, located by $\mathbf{r}_j$ and $\mathbf{r}_l$, respectively. Suppose $\mathbf{v}_j$ and $\mathbf{v}_l$ are the unit vectors orthogonal to $\mathbf{r}_j-\mathbf{r}_i$ and $\mathbf{r}_l-\mathbf{r}_i$, respectively, both pointing outside the $\widehat{jil}=\theta$ angle. These vectors are represented in Fig.~\ref{angle-elastic}.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.4\columnwidth]{./figs/angle-elastic.pdf}
+\caption{Illustration of the position $\mathbf{r}_i$ of the atom $i$ the positions $\mathbf{r}_j$ and $\mathbf{r}_l$ of its neighbors $j$ and $l$, as well as the $\widehat{jil}=\theta$ angle and the unit vectors $\mathbf{v}_j$ and $\mathbf{v}_l$ (orthogonal to $\mathbf{r}_j-\mathbf{r}_i$ and $\mathbf{r}_l-\mathbf{r}_i$, respectively) pointing outside the $\widehat{jil}=\theta$ angle.}
+\label{angle-elastic}
+\end{figure}
+
+The force over atom $j$ will be given by  given by
+\begin{equation}
+\mathbf{F}_j=-k_a\frac{(\theta-\theta_0)}{\theta_0}\mathbf{v}_j,
+\end{equation}
+where $\theta_0=120^\circ$ is the reference $sp^2$ bond angle for graphene and $k_a$ the force constant. The force over atom $l$ will be given by
+\begin{equation}
+\mathbf{F}_l=-k_a\frac{(\theta-\theta_0)}{\theta_0}\mathbf{v}_l,
+\end{equation}
+and the force over atom $i$ will be given by
+\begin{equation}
+\mathbf{F}_i=-\mathbf{F}_j-\mathbf{F}_l.
+\end{equation}
+
+
+3 - \emph{Coulomb repulsive forces:} a Coulomb like force given by
+\begin{equation}
+\mathbf{F}_i=\frac{q}{d/d_0}\mathbf{u}_{ij},
+\end{equation}
+where $q$ is the ``charge'' force constant, and $\mathbf{F}_i$ the force over atom $i$. The atom $j$ will feel the force $\mathbf{F}_j$ given by
+\begin{equation}
+\mathbf{F}_j=\frac{q}{d/d_0}\mathbf{u}_{ji}=\mathbf{F}_i,
+\end{equation}
+as $\mathbf{u}_{ji}=-\mathbf{u}_{ij}$.
+
+The important quantities for the structure optimization are $k$, $k_a$, $q$, and $dt$. These can be determined by the user through the \verb-relax.par- file, which contains these quantities (one per line) in this sequence. The \verb-relax.par- file still has a fith line containing an integer that tells if the program will draw a \verb-.svg- and a \verb-.pdf- file with an illustration of the atomic structure (0 for no, any othere integer for yes). Below we show an example for this set of parameters in the \verb-relax.par- format.
+\begin{verbatim}
+1.0D0   # k
+8.0D0   # ka
+1.0D0   # q
+0.001   # dt
+10000   # nstepmax
+1       # makesvgpdf 
+\end{verbatim}
+Depending on your system, you may have to tune these parameters to find reasonable results.
+
+If you want to generate the coordinates for a given system, you have to have its \verb-.anc- file and the \verb-.xyz-, \verb-.nxy-, and \verb-.anc- files for its ancestor. If you do not have the coordinates for the ancestor, the program looks for the ancestor's ancestor, and so on, down to graphene (which is the only system with two atoms). This works if you have run \verb-fcs2kid- and have the files for the previous generations of structures in the working directory. Then, when it finds an ancestor of the tree with already generated \verb-.xyz- and \verb-.nxy- files, it generates the coordinates through the following generations until the target system. Even if you do not have the \verb-.xyz- and \verb-.nxy- files for graphene, the program will create them in the last scenarion. Even though creating these files for graphene is not a hard task with a little thinking and maybe a drawing on a piece of paper. Below we show a possible form for graphene's \verb-.xyz- and \verb-.nxy- files.\\
+\verb-graphene.xyz-:
+\begin{verbatim}
+2
+
+C  0.37  0.37  0.00
+C  0.67  0.67  0.00
+\end{verbatim}
+\verb-graphene.nxy-:
+\begin{verbatim}
+6
+0  0 -1  0  0  1
+0  1  0  0 -1  0
+\end{verbatim}
+
+It it worth to remember that the \verb-.fev- and \verb-.nxy- have very simple forms, as represented below.\\
+\verb-graphene.fev-:
+\begin{verbatim}
+1    3    2
+1
+1
+1
+1
+1
+1
+\end{verbatim}
+\verb-graphene.fcs-:
+\begin{verbatim}
+1    3    2    6
+6  T
+1      1      1      1      1      1
+1      2      3      1      2      3
+1      2      1      2      1      2
+T      T      T      T      T      T
+T      F      F      F      F      F
+\end{verbatim}
+
+If the target system listed on the \verb-inp- file is labelled as \verb-graphene- or simply \verb-6-, the \verb-fcs2xyz- tool will produce sample \verb-.fev-, \verb-.flg-, \verb-.fcs-, \verb-.b.fcs-, \verb-.nxy-, and \verb-.xyz- files for the graphene structure, as well as a \verb-.svg- and a \verb-.pdf- with the corresponding structure drawing.
+
+Below we reproduce the pdf images generater for structures with up to 3 faces.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=\columnwidth]{./figs/xyz-examples.pdf}
+\caption{Output pdf images for the coordinates generated for the systems with up to 3 faces.}
+\label{xyz-examples}
+\end{figure}
+
+\end{document}
