@@ -15,3 +15,6 @@ In addition to simple conversions for the .fev, .flg, and .fcs formats, it runs
 - binary from/to formatted conversion 
 
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide.
+
+
+![logo](Doc/figs/fevtools.pdf)
