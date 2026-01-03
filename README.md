@@ -17,3 +17,15 @@ In addition to simple conversions for the .fev, .flg, and .fcs formats, it runs
 
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide.
 
+This software was initially written to implement the theory developed by the team in the following paper:
+- npj Computational Materials xx, xxxx (2026).
+
+Along this Fortran code, the team also developed a Python-based application for the same paper, listed in the article as reference [41], and available at:
+
+https://github.com/acm3851/embedding_tensor
+
+The team is formed by:
+- Lilac Macmillan (who maintains the Python software);
+- Eduardo Costa Girão (who maintains the Fortran software);
+- Vincent Meunier (project manager).
+
