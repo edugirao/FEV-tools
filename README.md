@@ -18,7 +18,7 @@ In addition to simple conversions for the .fev, .flg, and .fcs formats, it runs
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide.
 
 This software was initially written to implement the theory developed by the team in the following paper:
-- npj Computational Materials xx, xxxx (2026).
+- npj Computational Materials xx, xxxx (2026). DOI: 10.1038/s41524-025-01932-8
 
 Along this Fortran code, the team also developed a Python-based application for the same paper, listed in the article as reference [41], and available at:
 
