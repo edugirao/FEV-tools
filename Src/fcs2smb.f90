@@ -1,7 +1,7 @@
 PROGRAM faces_to_symbol
 IMPLICIT NONE
 INTEGER:: i,nf,npol(3:100)
-INTEGER:: j,l,n,m,l1,l2,ne,nmax,nv
+INTEGER:: j,l,n,m,l1,l2,ne,nmax,nv,ios
 INTEGER,ALLOCATABLE:: Afn(:,:),fsize(:),av_n(:),tmp(:),is(:)
 LOGICAL:: first
 CHARACTER*1:: syst
@@ -177,11 +177,23 @@ DO i=1,nf
   npol(fsize(i))=npol(fsize(i))+1
 END DO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Simple group
+! Symmetry group
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.sym')
-READ(1,*) group
-CLOSE(UNIT=1)
+INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.sym',EXIST=have_file_f)
+IF(have_file_f)THEN
+  OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.sym')
+  READ(1,*,IOSTAT=ios) group
+  CLOSE(UNIT=1)
+  IF(ios.ne.0)THEN
+    group='x'
+    WRITE(*,*) 'Symmetry .sym corrupted.'
+    WRITE(*,*) 'To get symbol with correct lattice type, first run flg2sym.'  
+  END IF
+ELSE
+  group='x'
+  WRITE(*,*) 'Symmetry .sym file not found.'
+  WRITE(*,*) 'To get symbol with correct lattice type, first run flg2sym.'
+END IF
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Simple symbol
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
