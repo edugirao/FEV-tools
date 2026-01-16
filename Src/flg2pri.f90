@@ -6,6 +6,7 @@ INTEGER:: n,i,j,l,nmaps,nfixed
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),m2(:,:),m1(:,:)
 INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:),mapa(:),map(:,:)
 INTEGER,ALLOCATABLE:: face(:),edge(:),vertex(:),fev(:,:,:)
+INTEGER,ALLOCATABLE:: f2f(:),e2e(:),v2v(:)
 CHARACTER*100:: filename
 LOGICAL,ALLOCATABLE:: ok_f(:),ok_e(:),ok_v(:)
 LOGICAL:: have_file_b,have_file_f
@@ -17,14 +18,6 @@ CALL read_init(filename)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading flag graph and faces sizes
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.flg')
-! READ(1,*) nflags,nf,ne,nv
-! ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf))
-! READ(1,*) nface
-! DO i=1,nflags
-!   READ(1,*) flag(i,:),neigh_flag(i,:),flag_color(i)
-! END DO  
-! CLOSE(UNIT=1)
 INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.flg',EXIST=have_file_b)
 IF(have_file_b)THEN
   OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED')
@@ -80,18 +73,22 @@ DO n=1,nmaps
   END IF
 END DO
 CLOSE(UNIT=8)
-
 ! New sizes
 nflags2=nflags/(ntramaps+1)
 nf2=nf/(ntramaps+1)
 ne2=ne/(ntramaps+1)
 nv2=nv/(ntramaps+1)
 
-
+IF(ntramaps.eq.0)THEN
+  WRITE(*,'(A)') 'Structure in the .flg file is already a primitive cell.'
+ELSE
+  WRITE(*,'(A)') 'Structure in the .flg file is a conventional cell.'
+END IF
 
 
 ALLOCATE(face(nf),edge(ne),vertex(nv))
 ALLOCATE(ok_f(nf),ok_e(ne),ok_v(nv))
+ALLOCATE(f2f(nf),e2e(ne),v2v(nv))
 ! ok indicates if the element has been marked already
 ok_f=.false.
 ok_e=.false.
@@ -99,6 +96,9 @@ ok_v=.false.
 fi=0
 ei=0
 vi=0
+f2f=0
+e2e=0
+v2v=0
 DO i=1,nflags
   ! If face not marked yet
   IF(.not.ok_f(flag(i,1)))THEN
@@ -112,15 +112,8 @@ DO i=1,nflags
     END DO
     ! Set these faces as marked
     ok_f(face(1:l))=.true.      
-    ! Change them all to the new face index
-    DO j=1,nflags
-      DO n=1,l
-        IF(flag(j,1).eq.face(n))THEN
-          flag(j,1)=fi
-          EXIT
-        END IF
-      END DO
-    END DO
+    ! Map them all to fi
+    f2f(face(1:l))=fi
   END IF
   ! If edge not marked yet
   IF(.not.ok_e(flag(i,2)))THEN
@@ -134,15 +127,8 @@ DO i=1,nflags
     END DO
     ! Set these edges as marked    
     ok_e(edge(1:l))=.true.
-    ! Change them all to the new edge index    
-    DO j=1,nflags
-      DO n=1,l
-        IF(flag(j,2).eq.edge(n))THEN
-          flag(j,2)=ei
-          EXIT
-        END IF
-      END DO
-    END DO
+    ! Map them all to ei
+    e2e(edge(1:l))=ei
   END IF  
   ! If vertex not marked yet  
   IF(.not.ok_v(flag(i,3)))THEN
@@ -156,19 +142,17 @@ DO i=1,nflags
     END DO
     ! Set these vertices as marked        
     ok_v(vertex(1:l))=.true.
-    ! Change them all to the new edge index
-    DO j=1,nflags
-      DO n=1,l
-        IF(flag(j,3).eq.vertex(n))THEN
-          flag(j,3)=vi
-          EXIT
-        END IF
-      END DO
-    END DO
+    ! Map them all to vi
+    v2v(vertex(1:l))=vi
   END IF    
 END DO
 
+! Relabelling flags
+flag(:,1)=f2f(flag(:,1))
+flag(:,2)=e2e(flag(:,2))
+flag(:,3)=v2v(flag(:,3))
 
+! Building primitive FEV tensor
 ALLOCATE(fev(nf2,ne2,nv2))
 fev=0
 DO i=1,nflags
