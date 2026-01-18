@@ -4,16 +4,24 @@ Fortran-written collection of tools to work with embedding tensors representing 
 
 It deals with a simple .fev format for the tensor and with the related .flg/.fcs formats associated with more complex entities describing the 3-regular graphs (flag graph/faces info set).
 
-In addition to simple conversions for the .fev, .flg, and .fcs formats, it runs
-- symmetry check
-- isomorphism check
-- tensor illustration 
-- structure generation 
-- coordinates generation 
-- reduction to primitive cell
-- polygonal symbol generation 
-- sum rules computation 
-- binary from/to formatted conversion 
+The following tools perform simple conversions for the .fev, .flg, and .fcs formats:
+- fev2flg
+- fev2fcs
+- flg2fev
+- flg2fcs
+- fcs2fev
+- fcs2flg
+ 
+In addition, the following tools perform specific tasks:
+- fev2sum - sum rules computation
+- fev2pov - tensor illustration 
+- flg2sym - symmetry check
+- flg2iso - isomorphism check
+- flg2pri - reduction to primitive cell
+- fcs2kid - structure generation 
+- fcs2xyz - coordinates generation 
+- fcs2smb - polygonal symbol generation 
+- for2bin - binary from/to formatted conversion 
 
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide and an Examples folder containing the .fev files of a few illustrative structures (along with the corresponding files for the coordinates and lattice vectors).
 
@@ -29,4 +37,5 @@ The team is formed by:
 - Eduardo Costa Girão (who maintains the Fortran software);
 
 - Vincent Meunier (project manager).
+
 
