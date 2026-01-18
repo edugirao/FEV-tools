@@ -33,9 +33,9 @@ Along with the Fortran code, the team also developed a Python-based application 
 https://github.com/acm3851/embedding_tensor
 
 The team is formed by:
-- Lilac Macmillan (who maintains the Python software);
 - Eduardo Costa Girão (who maintains the Fortran software);
-
+- Lilac Macmillan (who maintains the Python software);
 - Vincent Meunier (project manager).
+
 
 
