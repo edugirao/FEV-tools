@@ -26,7 +26,7 @@ In addition, the following tools perform specific tasks:
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide and an Examples folder containing the .fev files of a few illustrative structures (along with the corresponding files for the coordinates and lattice vectors).
 
 This software was initially written to implement the theory developed by the team in the following paper:
-- npj Computational Materials xx, xxxx (2026). DOI: 10.1038/s41524-025-01932-8
+- npj Computational Materials 12, 65 (2026). DOI: 10.1038/s41524-025-01932-8
 
 Along with the Fortran code, the team also developed a Python-based application for the same paper, listed in the article as reference [41], and available at:
 
@@ -36,6 +36,3 @@ The team is formed by:
 - Eduardo Costa Girão (who maintains the Fortran software);
 - Lilac Macmillan (who maintains the Python software);
 - Vincent Meunier (project manager).
-
-
-
