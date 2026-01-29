@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "FEVtools"
+version: 1.0.0
+date-released: 2026-01-29
+authors:
+  - family-names: Macmillian
+    given-names: Lilac
+  - family-names: Costa Girão
+    given-names: Eduardo
+  - family-names: Meunier
+    given-names: Vincent
+
+preferred-citation:
+  type: article
+  title: "Graph embedding tensor: unifying topological description, symmetry detection, and structure generation for two-dimensional carbon allotropes"
+  authors:
+    - family-names: Macmillian
+      given-names: Lilac
+    - family-names: Costa Girão
+      given-names: Eduardo
+    - family-names: Meunier
+      given-names: Vincent
+  journal: "npj Computational Materials"
+  year: 2026
+  doi: "10.1038/s41524-025-01932-8"
