@@ -57,7 +57,7 @@ FLG2ISO_DEPS = tools_read tools_maps tools_flag
 FLG2PRI_DEPS = tools_read tools_flag tools_maps
 
 # flg2sym depends on ...
-FLG2SYM_DEPS = tools_read tools_flag tools_maps tools_symm tools_misc
+FLG2SYM_DEPS = tools_read tools_flag tools_maps tools_symm
 
 # for2bin depends on ...
 FOR2BIN_DEPS = tools_read
