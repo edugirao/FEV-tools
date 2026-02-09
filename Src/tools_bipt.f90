@@ -1,12 +1,20 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng)        !!!
+MODULE tools_bipt                                                            !!!
+IMPLICIT NONE                                                                !!!
+PRIVATE                                                                      !!!
+PUBLIC:: bipartition                                                         !!!
+CONTAINS                                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng,neigh_flag_set,flag_color_set)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,c1,c2,f,nflags,flag_color(nflags),flag(nflags,3),ng,ncluster,nf  !!!
+INTEGER:: i,c1,c2,f,tmpsize                                                  !!!
+INTEGER:: nflags,flag_color(nflags),flag(nflags,3),ng,ncluster,nf            !!!
 INTEGER:: neigh_flag(nflags,3),neigh_flag2(nflags,3),flag_color2(nflags)     !!!
-INTEGER:: cluster(nflags),cluster2(nflags),nface(nf),neigh_flag3(nflags,3)   !!!
-INTEGER,ALLOCATABLE:: inv_bit(:)                                             !!!
-LOGICAL:: done,torus,endsearch,same                                          !!!
+INTEGER:: cluster(nflags),cluster2(nflags),nface(nf)                         !!!
+INTEGER,ALLOCATABLE:: inv_bit(:),neigh_flag_set(:,:,:),flag_color_set(:,:)   !!!
+INTEGER,ALLOCATABLE:: neigh_flag_set2(:,:,:),flag_color_set2(:,:)            !!!
+LOGICAL:: done,torus,endsearch                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Generating initial bipartition split                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -26,11 +34,12 @@ CALL wrap_clusters(nflags,flag,flag_color,neigh_flag,cluster)                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Adding missing inter-cluster bipartition connections                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+tmpsize=1                                                                    !!!
+ALLOCATE(neigh_flag_set(tmpsize,nflags,3),flag_color_set(tmpsize,nflags))    !!!
 IF(ncluster.eq.1)THEN                                                        !!!
   ng=1                                                                       !!!
-  OPEN(UNIT=38,FILE='fgraphs',FORM='UNFORMATTED')                            !!!
-  WRITE(38) neigh_flag,flag_color                                            !!!
-  CLOSE(UNIT=38)                                                             !!!
+  neigh_flag_set(ng,:,:)=neigh_flag                                          !!!
+  flag_color_set(ng,:)=flag_color                                            !!!
 ELSE IF(ncluster.gt.1)THEN                                                   !!!
   neigh_flag2=0                                                              !!!
   flag_color2=0                                                              !!!
@@ -63,21 +72,17 @@ ELSE IF(ncluster.gt.1)THEN                                                   !!!
     ! Toriodal test                                                          !!!
     CALL toroidal_test(nflags,neigh_flag2,torus,nf,nface,flag)               !!!
     IF(torus)THEN                                                            !!!
-      OPEN(UNIT=38,FILE='fgraphs',FORM='UNFORMATTED')                        !!!
-      same=.false.                                                           !!!
-      DO i=1,ng                                                              !!!
-        READ(38) neigh_flag3                                                 !!!
-        CALL check_equiv_fgraphs(nflags,nf,flag,nface,neigh_flag2, &         !!!
-                                         & flag,nface,neigh_flag3,same)      !!!
-        IF(same) EXIT                                                        !!!
-      END DO                                                                 !!!
-      CLOSE(UNIT=38)                                                         !!!
-      IF(.not.same)THEN                                                      !!!
-        ng=ng+1                                                              !!!
-        OPEN(UNIT=38,FILE='fgraphs',FORM='UNFORMATTED',POSITION='APPEND')    !!!
-        WRITE(38) neigh_flag2,flag_color2                                    !!!
-        CLOSE(UNIT=38)                                                       !!!
+      ng=ng+1                                                                !!!
+      IF(ng.gt.tmpsize)THEN                                                  !!!
+        ALLOCATE(neigh_flag_set2(2*tmpsize,nflags,3),flag_color_set2(2*tmpsize,nflags))
+        neigh_flag_set2(1:tmpsize,:,:)=neigh_flag_set                        !!!
+        flag_color_set2(1:tmpsize,:)=flag_color_set                          !!!
+        CALL MOVE_ALLOC(neigh_flag_set2,neigh_flag_set)                      !!!
+        CALL MOVE_ALLOC(flag_color_set2,flag_color_set)                      !!!
+        tmpsize=2*tmpsize                                                    !!!
       END IF                                                                 !!!
+      neigh_flag_set(ng,:,:)=neigh_flag2                                     !!!
+      flag_color_set(ng,:)=flag_color2                                       !!!
     END IF                                                                   !!!
     ! Updating bit structure if not torus                                    !!!
     DO i=1,ncluster-1                                                        !!!
@@ -348,4 +353,6 @@ DO                                                                           !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE bp_add                                                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END MODULE tools_bipt                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
