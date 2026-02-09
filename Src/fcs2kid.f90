@@ -1,14 +1,19 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev_search                                                           !!!
+PROGRAM fcs2kid                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_read                                                               !!!
+USE tools_adim                                                               !!!
+USE tools_conv                                                               !!!
+USE tools_maps                                                               !!!
+USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,l,nf,ne,nv,ie1,ie2                                             !!!
 INTEGER:: f0,f1,f2,f3,e0,e1,e2,e3,e4,v1,v2,v3,v4,v5,v6                       !!!
-INTEGER:: nmax,nmap,nfixed,ntmaps,nsys,nsys_p,isys                           !!!
-INTEGER:: nflags1,sys_p,fp                                                   !!!
+INTEGER:: nmax,nmaps,ntmaps,nsys,nsys_p,isys                                 !!!
+INTEGER:: nflags1,fp                                                         !!!
 INTEGER,ALLOCATABLE:: flag1(:,:),neigh_flag1(:,:),flag_color1(:)             !!!
 INTEGER,ALLOCATABLE:: flag2(:,:),neigh_flag2(:,:),nface2(:)                  !!!
-INTEGER,ALLOCATABLE:: map(:)                                                 !!!
+INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:),fp_gen(:)                     !!!
 INTEGER,ALLOCATABLE:: nface0(:)                                              !!!
 INTEGER,ALLOCATABLE:: f_in_f0(:,:),e_in_f0(:,:),v_in_f0(:,:)                 !!!
 LOGICAL,ALLOCATABLE:: b_in_f0(:,:),u_in_f0(:,:),uneq_face0(:)                !!!
@@ -16,23 +21,19 @@ INTEGER,ALLOCATABLE:: nface1(:)                                              !!!
 INTEGER,ALLOCATABLE:: f_in_f1(:,:),e_in_f1(:,:),v_in_f1(:,:)                 !!!
 LOGICAL,ALLOCATABLE:: b_in_f1(:,:),u_in_f1(:,:),uneq_face1(:)                !!!
 LOGICAL:: file_exist,same                                                    !!!
-CHARACTER*100:: filename,tmpfile,gensize,gensize_p,prevfile,aux              !!!
+CHARACTER*100:: filename,tmpfile,gensize,aux,trialfile                       !!!
+CHARACTER*100,ALLOCATABLE:: gen_filenames(:)                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying parent generation                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Structures' size                                                           !!!
-OPEN(UNIT=1,FILE='igen')                                                     !!!
-READ(1,*) nf                                                                 !!!
-CLOSE(UNIT=1)                                                                !!!
-IF(nf.eq.0)THEN                                                              !!!
-  CALL make_gen1                                                             !!!
-  STOP                                                                       !!!
-END IF                                                                       !!!
+CALL read_igen(nf,'igen')                                                    !!!
+! Create gen-0 if the case                                                   !!!
+IF(nf.eq.0) CALL make_gen1                                                   !!!
 ! Generation size                                                            !!!
-WRITE(gensize_p,'(I0)') nf                                                   !!!
-OPEN(UNIT=1,FILE='gensize'//TRIM(ADJUSTL(gensize_p)))                        !!!
-READ(1,*) nsys_p                                                             !!!
-CLOSE(UNIT=1)                                                                !!!
+CALL read_gensize(nf,nsys_p)                                                 !!!
+! Reading generation filenames                                               !!!
+CALL read_genfilenames(nf,nsys_p,gen_filenames,fp_gen)                       !!!
 ! Starting next generation size                                              !!!
 WRITE(gensize,'(I0)') nf+1                                                   !!!
 OPEN(UNIT=1,FILE='gensize'//TRIM(ADJUSTL(gensize)))                          !!!
@@ -42,32 +43,20 @@ nsys=0                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Running over all the structures of the parent database                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading parent structures filenames from gensystems file                   !!!
-OPEN(UNIT=43,FILE='gensystems'//TRIM(ADJUSTL(gensize_p)))                    !!!
 DO isys=1,nsys_p                                                             !!!
   ! Evolution bar                                                            !!!
   WRITE(*,'(I0,A,I0)') isys,'/',nsys_p                                       !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Getting parent system filelabel                                          !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  ! Getting parent structure's filename, ancestor, & ancestor's dimer added face
-  READ(43,*) filename,sys_p,fp                                               !!!
+  ! Getting parent structure's filename & ancestor's dimer added face        !!!
+  fp=fp_gen(isys)                                                            !!!
+  filename=gen_filenames(isys)                                               !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Reading .fcs info for the parent system                                  !!!
+  ! Reading .fcs info for the parent system (allocations inside read_fcs)    !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')     !!!
-  READ(3) nf,ne,nv,nmax                                                      !!!
-  ALLOCATE(f_in_f0(nf,nmax),e_in_f0(nf,nmax),v_in_f0(nf,nmax))               !!!
-  ALLOCATE(b_in_f0(nf,nmax),u_in_f0(nf,nmax),nface0(nf),uneq_face0(nf))      !!!
-  DO i=1,nf                                                                  !!!
-    READ(3) nface0(i),uneq_face0(i)                                          !!!
-    READ(3) f_in_f0(i,1:nface0(i))                                           !!!
-    READ(3) e_in_f0(i,1:nface0(i))                                           !!!
-    READ(3) v_in_f0(i,1:nface0(i))                                           !!!
-    READ(3) b_in_f0(i,1:nface0(i))                                           !!!
-    READ(3) u_in_f0(i,1:nface0(i))                                           !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=3)                                                              !!!
+  CALL read_fcs(nf,ne,nv,nmax,nface0,uneq_face0,f_in_f0,e_in_f0,v_in_f0, &   !!!
+                                            b_in_f0,u_in_f0,filename)        !!!
   ! Updating nmax for the children                                           !!!
   nmax=nmax+3                                                                !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -78,7 +67,6 @@ DO isys=1,nsys_p                                                             !!!
   ALLOCATE(v_in_f1(nf+1,nmax),b_in_f1(nf+1,nmax),u_in_f1(nf+1,nmax))         !!!
   nflags1=6*(nv+2)                                                           !!!
   ALLOCATE(flag1(nflags1,3),neigh_flag1(nflags1,3),flag_color1(nflags1))     !!!
-  ALLOCATE(map(nflags1))                                                     !!!
   ALLOCATE(flag2(nflags1,3),neigh_flag2(nflags1,3),nface2(nf+1))             !!!
 !   ALLOCATE(fev2(nf+1,ne+3,nv+2))                                           !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -90,28 +78,20 @@ DO isys=1,nsys_p                                                             !!!
     ! Who are E1/E2 around F0?                                               !!!
     DO ie1=1,nface0(f0) !iie1,iie1     ! ie1 gives E1                        !!!
       IF(.not.u_in_f0(f0,ie1)) CYCLE                                         !!!
-      ! Who's E1?                                                            !!!
-      e1=e_in_f0(f0,ie1)                                                     !!!
-      ! Who's V1?                                                            !!!
-      v1=v_in_f0(f0,ie1) ! V1 is E1's starting vertex                        !!!
-      ! Who's V4? (V1-V4 make E1) (we go V1->V4)                             !!!
-      j=ie1+1 ! Ej is the edge after E1.                                     !!!
+      e1=e_in_f0(f0,ie1) ! Who's E1?                                         !!!
+      v1=v_in_f0(f0,ie1) ! Who's V1? -> V1 is E1's starting vertex           !!!
+      j=ie1+1 ! (Ej is the edge after E1) (V1-V4 make E1) (we go V1->V4)     !!!
       IF(ie1.eq.nface0(f0)) j=1 ! Correct loop limit                         !!!
-      v4=v_in_f0(f0,j)   ! V4 is Ej's starting vertex                        !!!
-      ! Identifying F1                                                       !!!
-      f1=f_in_f0(f0,ie1)      ! Face touching E1                             !!!
-      DO ie2=ie1+1,nface0(f0)!iie2,iie2 ! ie2 gives E2                       !!!
-        ! Who's E2?                                                          !!!
-        e2=e_in_f0(f0,ie2)                                                   !!!
+      v4=v_in_f0(f0,j)   ! Who's V4? -> V4 is Ej's starting vertex           !!!
+      f1=f_in_f0(f0,ie1) ! Who's F1? -> Face touching E1                     !!!
+      DO ie2=ie1+1,nface0(f0) ! ie2 gives E2                                 !!!
+        e2=e_in_f0(f0,ie2)  ! Who's E2?                                      !!!
         IF((e1.eq.e2).AND.(.not.b_in_f0(f0,ie1))) CYCLE                      !!!
-        ! Who's V3?                                                          !!!
-        v3=v_in_f0(f0,ie2) ! V3 is E2's starting vertex                      !!!
-        ! Who's V2? (V3-V2 make E1) (we go V3->V2)                           !!!
-        j=ie2+1 ! Ej is the edge after E2?                                   !!!
+        v3=v_in_f0(f0,ie2)  ! Who's V3? -> V3 is E2's starting vertex        !!!
+        j=ie2+1 ! (Ej is the edge after E2) (V3-V2 make E1) (we go V3->V2)   !!!
         IF(ie2.eq.nface0(f0)) j=1 ! Correct loop limit                       !!!
-        v2=v_in_f0(f0,j)   ! V2 is Ej's starting vertex                      !!!
-        ! Identifying F2                                                     !!!
-        f2=f_in_f0(f0,ie2)     ! Face touching E2                            !!!
+        v2=v_in_f0(f0,j)    ! Who's V2? -> V2 is Ej's starting vertex        !!!
+        f2=f_in_f0(f0,ie2)  ! Who's F2? ->  Face touching E2                 !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
         ! Repetition                                                         !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
@@ -145,25 +125,16 @@ DO isys=1,nsys_p                                                             !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
         ! fcs to flg                                                         !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
-        CALL fcs2flg(nf+1,nmax,nface1,e_in_f1,v_in_f1,nflags1,flag1,neigh_flag1,flag_color1)    
+        CALL fcs_to_flg(nf+1,nmax,nface1,e_in_f1,v_in_f1,nflags1,flag1,neigh_flag1,flag_color1)    
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
         ! flg to map                                                         !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
-        tmpfile='kid'                                                        !!!
-        CALL flg2map(nflags1,flag1,neigh_flag1,flag_color1,nf+1,nface1,tmpfile)
-        OPEN(UNIT=1,FILE='kid.map')                                          !!!
-        READ(1,*) nmap                                                       !!!
+        CALL flg2map(nflags1,flag1,neigh_flag1,flag_color1,nf+1,nface1,nmaps,maps,maps_nfixed)  ! alocs inside
         ntmaps=0                                                             !!!
-        DO i=1,nmap                                                          !!!
-          READ(1,*) nfixed                                                   !!!
-          IF(nfixed.eq.0)THEN                                                !!!
-            READ(1,*) map                                                    !!!
-            IF(flag_color1(1)*flag_color1(map(1)).eq.1) ntmaps=ntmaps+1      !!!
-          ELSE                                                               !!!
-            READ(1,*)                                                        !!!
-          END IF                                                             !!!
+        DO i=1,nmaps                                                         !!!
+          IF(maps_nfixed(i).ne.0) CYCLE                                      !!!
+          IF(flag_color1(1)*flag_color1(maps(i,1)).eq.1) ntmaps=ntmaps+1     !!!
         END DO                                                               !!!
-        CLOSE(UNIT=1)                                                        !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
         ! Comparing child with previous database                             !!!
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                             !!!
@@ -173,29 +144,20 @@ DO isys=1,nsys_p                                                             !!!
         l=0                                                                  !!!
         DO                                                                   !!!
           l=l+1                                                              !!!
+          trialfile=tmpfile                                                  !!!
           ! If name has been taken before, add sufix                         !!!
           IF(l.gt.1)THEN                                                     !!!
             WRITE(aux,'(I0)') l                                              !!!
-            INQUIRE(FILE=TRIM(ADJUSTL(tmpfile))//'_'//TRIM(ADJUSTL(aux))//'.b.flg',EXIST=file_exist)
-          ELSE                                                               !!!
-            INQUIRE(FILE=TRIM(ADJUSTL(tmpfile))//'.b.flg',EXIST=file_exist)  !!!
+            trialfile=TRIM(ADJUSTL(tmpfile))//'_'//TRIM(ADJUSTL(aux))        !!!
           END IF                                                             !!!
+          INQUIRE(FILE=TRIM(ADJUSTL(trialfile))//'.b.flg',EXIST=file_exist)  !!!        
           ! If file exist, compare                                           !!!
           IF(file_exist)THEN                                                 !!!
-            IF(l.gt.1)THEN                                                   !!!
-              OPEN(UNIT=2,FILE=TRIM(ADJUSTL(tmpfile))//'_'//TRIM(ADJUSTL(aux))//'.b.flg',FORM='UNFORMATTED')
-            ELSE
-              OPEN(UNIT=2,FILE=TRIM(ADJUSTL(tmpfile))//'.b.flg',FORM='UNFORMATTED')
-            END IF                                                           !!!
-            ! Get previous flag graph                                        !!!
-            READ(2)                                                          !!!
-            READ(2) nface2                                                   !!!
-            READ(2) flag2                                                    !!!
-            READ(2) neigh_flag2                                              !!!
-            CLOSE(UNIT=2)                                                    !!!
+            ! Get previous flag graph                                        !!!          
+            CALL read_flg4kid(nf+1,nflags1,nface2,flag2,neigh_flag2,trialfile)!!
             ! Compare with trial flag graph                                  !!!
             CALL check_equiv_fgraphs(nflags1,nf+1,flag1,nface1,neigh_flag1, &
-                                            & flag2,nface2,neigh_flag2,same)
+                                   & nflags1,nf+1,flag2,nface2,neigh_flag2,same)
             IF(same) EXIT                                                    !!!
           ELSE                                                               !!!
             EXIT                                                             !!!
@@ -203,24 +165,9 @@ DO isys=1,nsys_p                                                             !!!
         END DO                                                               !!!
         ! New system?                                                        !!!
         IF(.not.same)THEN                                                    !!!
-          ! Define new system's name                                         !!!
-          CALL get_lname(nf+1,nface1,tmpfile)                                !!!
-          ! Check if a previous system has the same name (and how many)      !!!
-          l=LEN_TRIM(tmpfile)                                                !!!
-          OPEN(UNIT=1,FILE='gensystems'//TRIM(ADJUSTL(gensize)))             !!!
-          j=1                                                                !!!
-          DO i=1,nsys                                                        !!!
-            READ(1,*) prevfile                                               !!!
-            IF(TRIM(ADJUSTL(prevfile(1:l))).eq.TRIM(ADJUSTL(tmpfile)))THEN   !!!
-              j=j+1                                                          !!!
-            ENDIF                                                            !!!
-          END DO                                                             !!!
-          CLOSE(UNIT=1)                                                      !!!
-          ! If name has been taken before, add sufix                         !!!
-          IF(j.gt.1)THEN                                                     !!!
-            WRITE(aux,'(I0)') j                                              !!!
+          IF(l.gt.1)THEN                                                     !!!
             tmpfile=TRIM(ADJUSTL(tmpfile))//'_'//TRIM(ADJUSTL(aux))          !!!
-          END IF                                                             !!!
+          END IF                                                             !!!          
           ! Updating database size                                           !!!
           nsys=nsys+1                                                        !!!
           OPEN(UNIT=1,FILE='gensize'//TRIM(ADJUSTL(gensize)))                !!!
@@ -233,31 +180,16 @@ DO isys=1,nsys_p                                                             !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           ! Writing .flg                                                     !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          OPEN(UNIT=3,FILE=TRIM(ADJUSTL(tmpfile))//'.b.flg',FORM='UNFORMATTED')
-          WRITE(3) nflags1,nf+1,ne+3,nv+2                                    !!!
-          WRITE(3) nface1                                                    !!!
-          WRITE(3) flag1                                                     !!!
-          WRITE(3) neigh_flag1                                               !!!
-          WRITE(3) flag_color1                                               !!!
-          CLOSE(UNIT=3)                                                      !!!
+          CALL write_flg_bin(nf+1,ne+3,nv+2,nflags1,nface1,flag1,neigh_flag1,flag_color1,tmpfile)
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           ! Writing .fcs                                                     !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           ! Getting uneq_face1 and u_in_f1                                   !!!
-          aux='kid'                                                          !!!
-          CALL neq_fe(nflags1,flag1,nf+1,ne+3,nface1,nmax,e_in_f1,uneq_face1,u_in_f1,aux)
+          CALL neq_fe(nflags1,flag1,nf+1,ne+3,nface1,nmax,e_in_f1,uneq_face1,u_in_f1,nmaps,maps)
           CALL f_in_faces(nflags1,flag1,neigh_flag1,nf+1,nface1,f_in_f1,b_in_f1,nmax)
-          OPEN(UNIT=3,FILE=TRIM(ADJUSTL(tmpfile))//'.b.fcs',FORM='UNFORMATTED')
-          WRITE(3) nf+1,ne+3,nv+2,MAXVAL(nface1)                             !!!
-          DO i=1,nf+1                                                        !!!
-            WRITE(3) nface1(i),uneq_face1(i)                                 !!!
-            WRITE(3) f_in_f1(i,1:nface1(i))                                  !!!
-            WRITE(3) e_in_f1(i,1:nface1(i))                                  !!!
-            WRITE(3) v_in_f1(i,1:nface1(i))                                  !!!
-            WRITE(3) b_in_f1(i,1:nface1(i))                                  !!!
-            WRITE(3) u_in_f1(i,1:nface1(i))                                  !!!
-          END DO                                                             !!!
-          CLOSE(UNIT=3)                                                      !!!
+          ! Writting .b.fcs                                                  !!!
+          CALL write_fcs_bin(nf+1,ne+3,nv+2,MAXVAL(nface1),nface1,uneq_face1 &!!
+                       & ,f_in_f1,e_in_f1,v_in_f1,b_in_f1,u_in_f1,tmpfile)   !!!          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           ! Writing .flg                                                     !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
@@ -265,11 +197,8 @@ DO isys=1,nsys_p                                                             !!!
           WRITE(3,*) TRIM(ADJUSTL(filename))                                 !!!
           WRITE(3,*) f0,ie1,ie2                                              !!!
           CLOSE(UNIT=3)                                                      !!!
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          ! Renaming .map file                                               !!!
-          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          CALL RENAME('kid.map',TRIM(ADJUSTL(tmpfile))//'.map')              !!!
         END IF                                                               !!!
+        DEALLOCATE(maps,maps_nfixed)                                         !!!        
       END DO                                                                 !!!
     END DO                                                                   !!!
   END DO                                                                     !!!
@@ -279,9 +208,8 @@ DO isys=1,nsys_p                                                             !!!
   DEALLOCATE(f_in_f1,e_in_f1)                                                !!!
   DEALLOCATE(v_in_f1,b_in_f1,u_in_f1)                                        !!!
   DEALLOCATE(flag1,neigh_flag1,flag_color1)                                  !!!
-  DEALLOCATE(map)                                                            !!!
   DEALLOCATE(flag2,neigh_flag2,nface2)                                       !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev_search                                                       !!!
+END PROGRAM fcs2kid                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
