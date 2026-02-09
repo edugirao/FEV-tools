@@ -1,31 +1,23 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev_cuboid                                                           !!!
+PROGRAM fev2pov                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_read                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,ne,nv,i,j,l                                                     !!!
 INTEGER,ALLOCATABLE:: fev(:,:,:)                                             !!!
 REAL(KIND=8):: r(3),delta,v1(3)                                              !!!
-CHARACTER*100:: filelabel                                                    !!!
+CHARACTER*100:: filename                                                     !!!
 CHARACTER*20::pov_command                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying the input file                                                 !!!
-OPEN(UNIT=1,FILE='inp')                                                      !!!
-READ(1,*) filelabel                                                          !!!
-CLOSE(UNIT=1)                                                                !!!
-! Reading fev                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filelabel))//'.fev')                           !!!
-READ(1,*) nf,ne,nv                                                           !!!
-ALLOCATE(fev(nf,ne,nv))                                                      !!!
-DO i=1,nf                                                                    !!!
-  DO j=1,ne                                                                  !!!
-    DO l=1,nv                                                                !!!
-      READ(1,*) fev(i,j,l)                                                   !!!
-    END DO                                                                   !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-CLOSE(UNIT=1)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filelabel))//'.pov')                           !!!
+CALL read_init(filename,'inp')                                               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading embedding tensor from .fev file (allocations inside)               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.pov')                            !!!
 WRITE(1,*) '#include "transforms.inc"'                                       !!!
 WRITE(1,*) 'camera {'                                                        !!!
 WRITE(1,*) '  orthographic'                                                  !!!
@@ -229,7 +221,7 @@ WRITE(1,*)  '  texture { pigment { color rgb <',0.0,',',1.0,',',0.0,'>}}'    !!!
 WRITE(1,*) ' finish { reflection 0.03 specular 0.35 } '                      !!!
 WRITE(1,*) '}'                                                               !!!
 CLOSE(UNIT=1)                                                                !!!
-CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filelabel))//'.pov')              !!!
+! CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'.pov')             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev_cuboid                                                       !!!
+END PROGRAM fev2pov                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
