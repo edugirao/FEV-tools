@@ -1,74 +1,19 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_gen1                                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+MODULE tools_adim                                                            !!!
 IMPLICIT NONE                                                                !!!
-LOGICAL:: tru,fal                                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-tru=.true.                                                                   !!!
-fal=.false.                                                                  !!!
-OPEN(UNIT=1,FILE='6.fev')                                                    !!!
-WRITE(1,*) '1    3    2'                                                     !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE='6.flg')                                                    !!!
-WRITE(1,*) '12    1    3    2'                                               !!!
-WRITE(1,*) '6'                                                               !!!
-WRITE(1,*) '1      1      1      2      6      8      1'                     !!!
-WRITE(1,*) '1      1      1      1      3      7     -1'                     !!!
-WRITE(1,*) '1      2      1      4      2     10      1'                     !!!
-WRITE(1,*) '1      2      1      3      5      9     -1'                     !!!
-WRITE(1,*) '1      3      1      6      4     12      1'                     !!!
-WRITE(1,*) '1      3      1      5      1     11     -1'                     !!!
-WRITE(1,*) '1      1      2      8     12      2      1'                     !!!
-WRITE(1,*) '1      1      2      7      9      1     -1'                     !!!
-WRITE(1,*) '1      2      2     10      8      4      1'                     !!!
-WRITE(1,*) '1      2      2      9     11      3     -1'                     !!!
-WRITE(1,*) '1      3      2     12     10      6      1'                     !!!
-WRITE(1,*) '1      3      2     11      7      5     -1'                     !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE='6.fcs')                                                    !!!
-WRITE(1,*) '1    3    2    6'                                                !!!
-WRITE(1,*) '6  T'                                                            !!!
-WRITE(1,*) '1      1      1      1      1      1'                            !!!
-WRITE(1,*) '1      2      3      1      2      3'                            !!!
-WRITE(1,*) '1      2      1      2      1      2'                            !!!
-WRITE(1,*) 'T      T      T      T      T      T'                            !!!
-WRITE(1,*) 'T      F      F      F      F      F'                            !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE='6.b.fcs',FORM='UNFORMATTED')                               !!!
-WRITE(1) 1,3,2,6                                                             !!!
-WRITE(1) 6,tru                                                               !!!
-WRITE(1) 1,1,1,1,1,1                                                         !!!
-WRITE(1) 1,2,3,1,2,3                                                         !!!
-WRITE(1) 1,2,1,2,1,2                                                         !!!
-WRITE(1) tru,tru,tru,tru,tru,tru                                             !!!
-WRITE(1) tru,fal,fal,fal,fal,fal                                             !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE='gensize1')                                                 !!!
-WRITE(1,*) 1                                                                 !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE='gensystems1')                                              !!!
-WRITE(1,*) 6,1,1,0                                                           !!!
-CLOSE(UNIT=1)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE make_gen1                                                     !!!
+PUBLIC                                                                       !!!
+PRIVATE:: sorting,swaptwo                                                    !!!
+CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE fev_in_faces(nflags,flag,neigh_flag,nf,nface,f_in_f,e_in_f,v_in_f,b_in_f,lmax)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,nf,nflags,flag(nflags,3),neigh_flag(nflags,3),nface(nf)      !!!
-INTEGER:: lmax,f_in_f(nf,lmax),e_in_f(nf,lmax),v_in_f(nf,lmax),last          !!!
-LOGICAL:: b_in_f(nf,lmax)                                                    !!!
+INTEGER:: i,j,l,nf,nflags,lmax,last                                          !!!
+INTEGER:: flag(nflags,3),neigh_flag(nflags,3),nface(nf)                      !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:)        !!!
+LOGICAL,ALLOCATABLE,INTENT(OUT):: b_in_f(:,:)                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! f_in_f(i,j) -> neighbor face by i-th face                                  !!!
 ! e_in_f(i,j) -> j-th edge in i-th face                                      !!!
@@ -76,6 +21,7 @@ LOGICAL:: b_in_f(nf,lmax)                                                    !!!
 ! -> e_in_f(i,j) starts in v_in_f(i,j) and finishes in v_in_f(i,j+1)         !!!
 ! -> They're sorted by appearance around the face the face.                  !!!
 ! -> Bridges appear twice. Vertices on bridges appear twice.                 !!!
+ALLOCATE(f_in_f(nf,lmax),e_in_f(nf,lmax),v_in_f(nf,lmax),b_in_f(nf,lmax))    !!!
 f_in_f=0                                                                     !!!
 e_in_f=0                                                                     !!!
 v_in_f=0                                                                     !!!
@@ -147,25 +93,21 @@ END SUBROUTINE f_in_faces                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,filename)
+SUBROUTINE neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,nmaps,maps)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,l,nflags,flag(nflags,3),f1,f2,e1,e2,nmaps                      !!!
 INTEGER:: nf,nface(nf),mapa(nflags),ne,nmax,e_in_f(nf,nmax)                  !!!
-INTEGER:: Fadj(nf,nf),Eadj(ne,ne)                                            !!!
+INTEGER:: Fadj(nf,nf),Eadj(ne,ne),maps(nmaps,nflags)                         !!!
 LOGICAL:: uneq_face(nf),u_in_f(nf,nmax)                                      !!!
-CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 uneq_face=.true.                                                             !!!
 u_in_f=.true.                                                                !!!
 Fadj=0                                                                       !!!
 Eadj=0                                                                       !!!
-OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename))//'.map')                            !!!
-READ(3,*) nmaps                                                              !!!
 DO i=1,nmaps                                                                 !!!
   ! Getting a map                                                            !!!
-  READ(3,*)                                                                  !!!
-  READ(3,*) mapa                                                             !!!
+  mapa=maps(i,:)                                                             !!!
   DO j=1,nflags                                                              !!!
     f1=flag(j,1)                                                             !!!
     f2=flag(mapa(j),1)                                                       !!!
@@ -445,18 +387,20 @@ END SUBROUTINE sorting                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- SUBROUTINE swaptwo(a,b)                                                     !!!
+SUBROUTINE swaptwo(a,b)                                                      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Subroutine to swap two real numbers                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- IMPLICIT none                                                               !!!
- INTEGER:: a,b,tmp                                                           !!!
+IMPLICIT none                                                                !!!
+INTEGER:: a,b,tmp                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Swapping numbers                                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- tmp=a ! Saving "a" value in a safe place                                    !!!
- a=b   ! Store "b" value in the place of "a"                                 !!!
- b=tmp ! Store the original "a" value on the place of "b"                    !!!
+tmp=a ! Saving "a" value in a safe place                                     !!!
+a=b   ! Store "b" value in the place of "a"                                  !!!
+b=tmp ! Store the original "a" value on the place of "b"                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- END SUBROUTINE swaptwo                                                      !!!
+END SUBROUTINE swaptwo                                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END MODULE tools_adim                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
