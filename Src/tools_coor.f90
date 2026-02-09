@@ -1,4 +1,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+MODULE tools_coor                                                            !!!
+IMPLICIT NONE                                                                !!!
+PRIVATE                                                                      !!!
+PUBLIC:: make_a_xyz,make_graphene                                            !!!
+CONTAINS                                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE get_real_face(nface,rf,nf,nv,nmax,rp,f,v_in_f,x_in_f,y_in_f)      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
@@ -331,8 +337,9 @@ END SUBROUTINE f12_nxy                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_a_xyz(filename_k)                                            !!!
+SUBROUTINE make_a_xyz(filename_k,filename_p,f0,ie1,ie2,nv1,rk,nf1,nface1,x_in_f1,y_in_f1)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_read                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,nf0,ne0,nv0,nf1,ne1,nv1,ie1,ie2                                !!!
 INTEGER:: f0,f1,f2,f3,e1,e2,v1,v2,v3,v4,v5,v6,i1,i2                          !!!
@@ -347,34 +354,13 @@ INTEGER,ALLOCATABLE:: x_in_f1(:,:),y_in_f1(:,:)                              !!!
 CHARACTER*100:: filename_p,filename_k                                        !!!
 REAL(KIND=8),ALLOCATABLE:: rp(:,:),rk(:,:),rf(:,:)                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Getting child filename                                                     !!!
+! Reading parent .fcs (allocations in read_fcs_only_fev_in_f)                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! OPEN(UNIT=1,FILE='inp')                                                    !!!
-! READ(1,*) filename_k                                                       !!!
-! CLOSE(UNIT=1)                                                              !!!
-IF((TRIM(ADJUSTL(filename_k)).eq.'graphene').OR.(TRIM(ADJUSTL(filename_k)).eq.'6'))THEN
-  CALL make_graphene(filename_k)                                             !!!
-  RETURN                                                                     !!!
-END IF                                                                       !!!
+CALL read_fcs_only_fev_in_f(nf0,ne0,nv0,nmax0,nface0,f_in_f0,e_in_f0,v_in_f0,filename_p)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Getting ancestor info                                                      !!!
+! Reading child .fcs (allocations in read_fcs_only_fev_in_f)                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename_k))//'.anc')                          !!!
-READ(1,*) filename_p                                                         !!!
-READ(1,*) f0,ie1,ie2                                                         !!!
-CLOSE(UNIT=1)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading parent .fcs                                                        !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fcs_size(nf0,ne0,nv0,nmax0,filename_p)                             !!!
-ALLOCATE(f_in_f0(nf0,nmax0),e_in_f0(nf0,nmax0),v_in_f0(nf0,nmax0),nface0(nf0))
-CALL read_fev_in_f(nf0,nmax0,nface0,f_in_f0,e_in_f0,v_in_f0,filename_p)      !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading child .fcs                                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fcs_size(nf1,ne1,nv1,nmax1,filename_k)                             !!!
-ALLOCATE(f_in_f1(nf1,nmax1),e_in_f1(nf1,nmax1),v_in_f1(nf1,nmax1),nface1(nf1))
-CALL read_fev_in_f(nf1,nmax1,nface1,f_in_f1,e_in_f1,v_in_f1,filename_k)      !!!
+CALL read_fcs_only_fev_in_f(nf1,ne1,nv1,nmax1,nface1,f_in_f1,e_in_f1,v_in_f1,filename_k)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading parent .nxy                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -491,27 +477,6 @@ IF(iv6y.ne.0) rk(v6,2)=rk(v6,2)-iv6y*1.0D0                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL xyz_optimization(nf1,nv1,nmax1,nface1,v_in_f1,x_in_f1,y_in_f1,rk,filename_k)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Writing child structure                                                    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename_k))//'.xyz')                          !!!
-WRITE(3,*) nv1                                                               !!!
-WRITE(3,*)                                                                   !!!
-DO i=1,nv1                                                                   !!!
-  WRITE(3,*) 'C',rk(i,:),0.0D0                                               !!!
-END DO                                                                       !!!
-WRITE(3,*)                                                                   !!!
-CLOSE(UNIT=3)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Writing child .nxy                                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename_k))//'.nxy')                          !!!
-DO i=1,nf1                                                                   !!!
-  WRITE(3,*) nface1(i)                                                       !!!
-  WRITE(3,*) x_in_f1(i,1:nface1(i))                                          !!!
-  WRITE(3,*) y_in_f1(i,1:nface1(i))                                          !!!
-END DO                                                                       !!!
-CLOSE(UNIT=3)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE make_a_xyz                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -524,7 +489,7 @@ INTEGER:: nn(nv),neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3)                     !!!
 INTEGER:: nface(nf),nstepmax                                                 !!!
 INTEGER:: v_in_f(nf,nmax),x_in_f(nf,nmax),y_in_f(nf,nmax)                    !!!
 CHARACTER*100:: filename                                                     !!!
-REAL(KIND=8):: d0,d_ave,dmax,pi,k,ka,q,dt                                    !!!
+REAL(KIND=8):: d0,dmax,pi,k,ka,q,dt                                          !!!
 REAL(KIND=8):: r(nv,2),f(nv,2)                                               !!!
 LOGICAL:: yes                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -819,86 +784,28 @@ END SUBROUTINE correct_coordinates                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_graphene(filename)                                           !!!
+SUBROUTINE make_graphene                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,nv,x_in_f(1,6),y_in_f(1,6),f_in_f(1,6),e_in_f(1,6),v_in_f(1,6)  !!!
-INTEGER:: nn(2),neigh(2,3),neigh_x(2,3),neigh_y(2,3),nface(1),nmax           !!!
+INTEGER:: nf,nv,x_in_f(1,6),y_in_f(1,6),v_in_f(1,6),nface(1)                 !!!
+INTEGER:: nn(2),neigh(2,3),neigh_x(2,3),neigh_y(2,3),nmax                    !!!
 REAL(KIND=8):: r(2,2)                                                        !!!
-CHARACTER*100:: filename                                                     !!!
-LOGICAL:: tru,fal                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-tru=.true.                                                                   !!!
-fal=.false.                                                                  !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.fev')                            !!!
-WRITE(1,*) '1    3    2'                                                     !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*) '1'                                                               !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.flg')                            !!!
-WRITE(1,*) '12    1    3    2'                                               !!!
-WRITE(1,*) '6'                                                               !!!
-WRITE(1,*) '1      1      1      2      6      8      1'                     !!!
-WRITE(1,*) '1      1      1      1      3      7     -1'                     !!!
-WRITE(1,*) '1      2      1      4      2     10      1'                     !!!
-WRITE(1,*) '1      2      1      3      5      9     -1'                     !!!
-WRITE(1,*) '1      3      1      6      4     12      1'                     !!!
-WRITE(1,*) '1      3      1      5      1     11     -1'                     !!!
-WRITE(1,*) '1      1      2      8     12      2      1'                     !!!
-WRITE(1,*) '1      1      2      7      9      1     -1'                     !!!
-WRITE(1,*) '1      2      2     10      8      4      1'                     !!!
-WRITE(1,*) '1      2      2      9     11      3     -1'                     !!!
-WRITE(1,*) '1      3      2     12     10      6      1'                     !!!
-WRITE(1,*) '1      3      2     11      7      5     -1'                     !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.fcs')                            !!!
-WRITE(1,*) '1    3    2    6'                                                !!!
-WRITE(1,*) '6  T'                                                            !!!
-WRITE(1,*) '1      1      1      1      1      1'                            !!!
-WRITE(1,*) '1      2      3      1      2      3'                            !!!
-WRITE(1,*) '1      2      1      2      1      2'                            !!!
-WRITE(1,*) 'T      T      T      T      T      T'                            !!!
-WRITE(1,*) 'T      F      F      F      F      F'                            !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')       !!!
-WRITE(1) 1,3,2,6                                                             !!!
-WRITE(1) 6,tru                                                               !!!
-WRITE(1) 1,1,1,1,1,1                                                         !!!
-WRITE(1) 1,2,3,1,2,3                                                         !!!
-WRITE(1) 1,2,1,2,1,2                                                         !!!
-WRITE(1) tru,tru,tru,tru,tru,tru                                             !!!
-WRITE(1) tru,fal,fal,fal,fal,fal                                             !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.nxy')                            !!!
-WRITE(1,*) '6'                                                               !!!
-WRITE(1,*) '0      0     -1      0      0      1'                            !!!
-WRITE(1,*) '0      1      0      0     -1      0'                            !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.xyz')                            !!!
-WRITE(1,*) '2'                                                               !!!
-WRITE(1,*)                                                                   !!!
-WRITE(1,*) 'C  0.37  0.37  0.00'                                             !!!
-WRITE(1,*) 'C  0.67  0.67  0.00'                                             !!!
-WRITE(1,*)                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
-nv=2                                                                         !!!
 nf=1                                                                         !!!
-nmax=6                                                                       !!!
 nface(1)=6                                                                   !!!
-CALL read_xydata(nv,r,filename)                                              !!!
-CALL read_nxy(nf,nmax,nface,x_in_f,y_in_f,filename)                          !!!
-CALL read_fev_in_f(nf,nmax,nface,f_in_f,e_in_f,v_in_f,filename)              !!!
-CALL nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y) 
-CALL svgfig_maker(nv,r,neigh,neigh_x,neigh_y,filename)                       !!!
-CALL SYSTEM('inkscape '//TRIM(ADJUSTL(filename))//'.svg -o '//TRIM(ADJUSTL(filename))//'.pdf')
+nmax=6                                                                       !!!
+v_in_f(1,1)=1 ; x_in_f(1,1)=0  ; y_in_f(1,1)=0                               !!!
+v_in_f(1,2)=2 ; x_in_f(1,2)=0  ; y_in_f(1,2)=1                               !!!
+v_in_f(1,3)=1 ; x_in_f(1,3)=-1 ; y_in_f(1,3)=0                               !!!
+v_in_f(1,4)=2 ; x_in_f(1,4)=0  ; y_in_f(1,4)=0                               !!!
+v_in_f(1,5)=1 ; x_in_f(1,5)=0  ; y_in_f(1,5)=-1                              !!!
+v_in_f(1,6)=2 ; x_in_f(1,6)=1  ; y_in_f(1,6)=0                               !!!
+nv=2                                                                         !!!
+CALL nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y)!!
+r(1,:)=0.37D0                                                                !!!
+r(2,:)=0.67D0                                                                !!!
+CALL svgfig_maker(nv,r,neigh,neigh_x,neigh_y,'6')                            !!!
+CALL SYSTEM('inkscape 6.svg -o 6.pdf')                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE make_graphene                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -910,7 +817,7 @@ IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,nv,i1,i2                                                       !!!
 INTEGER:: neigh_x(nv,3),neigh_y(nv,3),neigh(nv,3)                            !!!
 REAL(KIND=8):: r(nv,2),x(2),y(2),v1(2),v2(2),s,fac                           !!!
-CHARACTER*100::filename                                                      !!!
+CHARACTER(LEN=*),INTENT(IN)::filename                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 x(1)=1.0D0                                                                   !!!
 x(2)=0.0D0                                                                   !!!
@@ -928,8 +835,8 @@ DO i1=-1,3                                                                   !!!
 DO i2=-1,3                                                                   !!!
 DO i=1,nv                                                                    !!!
   v1=r(i,:)+i1*x+i2*y                                                        !!!
-  write(2,*) '<circle cx="',v1(1)*s,'" cy="',v1(2)*s,'" r="',0.05*s*fac,'" stroke="black" stroke-width="',0.001*s*fac,'"', &
-  & ' fill="rgb(',0.0,',',0.0,',',0.0,')" />'                                !!!
+  write(2,*) '<circle cx="',v1(1)*s,'" cy="',v1(2)*s,'" r="',0.05*s*fac,'" stroke="black" stroke-width="' &
+  & ,0.001*s*fac,'"',' fill="rgb(',0.0,',',0.0,',',0.0,')" />'                                !!!
   DO j=1,3                                                                   !!!
     v2=r(neigh(i,j),:)+x*neigh_x(i,j)+y*neigh_y(i,j)+i1*x+i2*y               !!!
     write(2,*) '<line x1="',v1(1)*s,'" y1="',v1(2)*s,'" x2="',v2(1)*s,'" y2="',v2(2)*s, &
@@ -1036,4 +943,8 @@ DO i=1,nv                                                                    !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE force                                                         !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END MODULE tools_coor                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
