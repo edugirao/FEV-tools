@@ -68,7 +68,6 @@ DO isys=1,nsys_p                                                             !!!
   nflags1=6*(nv+2)                                                           !!!
   ALLOCATE(flag1(nflags1,3),neigh_flag1(nflags1,3),flag_color1(nflags1))     !!!
   ALLOCATE(flag2(nflags1,3),neigh_flag2(nflags1,3),nface2(nf+1))             !!!
-!   ALLOCATE(fev2(nf+1,ne+3,nv+2))                                           !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Running add dimer procedure for the parent system                        !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
@@ -173,16 +172,16 @@ DO isys=1,nsys_p                                                             !!!
           OPEN(UNIT=1,FILE='gensize'//TRIM(ADJUSTL(gensize)))                !!!
           WRITE(1,*) nsys                                                    !!!
           CLOSE(UNIT=1)                                                      !!!
-          ! Updating database adding the new system                          !!!
+          ! Updating database by adding the new system                       !!!
           OPEN(UNIT=1,FILE='gensystems'//TRIM(ADJUSTL(gensize)),POSITION='APPEND')
           WRITE(1,*) tmpfile,nsys,f0,ntmaps                                  !!!
           CLOSE(UNIT=1)                                                      !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          ! Writing .flg                                                     !!!
+          ! Writing .b.flg                                                   !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           CALL write_flg_bin(nf+1,ne+3,nv+2,nflags1,nface1,flag1,neigh_flag1,flag_color1,tmpfile)
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          ! Writing .fcs                                                     !!!
+          ! Writing .b.fcs                                                   !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
           ! Getting uneq_face1 and u_in_f1                                   !!!
           CALL neq_fe(nflags1,flag1,nf+1,ne+3,nface1,nmax,e_in_f1,uneq_face1,u_in_f1,nmaps,maps)
@@ -191,12 +190,9 @@ DO isys=1,nsys_p                                                             !!!
           CALL write_fcs_bin(nf+1,ne+3,nv+2,MAXVAL(nface1),nface1,uneq_face1 &!!
                        & ,f_in_f1,e_in_f1,v_in_f1,b_in_f1,u_in_f1,tmpfile)   !!!          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          ! Writing .flg                                                     !!!
+          ! Writing .anc                                                     !!!
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                           !!!
-          OPEN(UNIT=3,FILE=TRIM(ADJUSTL(tmpfile))//'.anc')                   !!!
-          WRITE(3,*) TRIM(ADJUSTL(filename))                                 !!!
-          WRITE(3,*) f0,ie1,ie2                                              !!!
-          CLOSE(UNIT=3)                                                      !!!
+          CALL write_anc(f0,ie1,ie2,tmpfile,filename)                        !!!
         END IF                                                               !!!
         DEALLOCATE(maps,maps_nfixed)                                         !!!        
       END DO                                                                 !!!
