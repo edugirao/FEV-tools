@@ -1,22 +1,30 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev_to_faces_info                                                    !!!
+PROGRAM fev2fcs                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_adim                                                               !!!
+USE tools_bipt                                                               !!!
+USE tools_flag                                                               !!!
+USE tools_maps                                                               !!!
+USE tools_read                                                               !!!
+USE tools_rule                                                               !!!
+USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,ne,nv,nflags,ng,ig,i,nmax                                       !!!
+INTEGER:: nf,ne,nv,nflags,ng,ig,nmax,nmaps,i,j                               !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),fev(:,:,:)                          !!!
-INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:)                          !!!
-INTEGER,ALLOCATABLE:: reduc_ev(:,:)                                          !!!
+INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:),neigh_flag_j(:,:)        !!!
+INTEGER,ALLOCATABLE:: reduc_ev(:,:),maps(:,:),maps_nfixed(:)                 !!!
 INTEGER,ALLOCATABLE:: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:)                    !!!
 LOGICAL,ALLOCATABLE:: b_in_f(:,:),u_in_f(:,:),uneq_face(:)                   !!!
+INTEGER,ALLOCATABLE:: neigh_flag_set(:,:,:),flag_color_set(:,:)              !!!
 CHARACTER*100:: filename,fileindex                                           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading .fev file                                                          !!!
+LOGICAL:: same                                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
-CALL read_init(filename)                                                     !!!
-! Reading FEV Data                                                           !!!
-CALL read_fev_size(nf,ne,nv,filename)                                        !!!
-ALLOCATE(fev(nf,ne,nv))                                                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL read_init(filename,'inp')                                               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading embedding tensor from .fev file (allocations inside)               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating flags                                                             !!!
@@ -50,17 +58,31 @@ DEALLOCATE(reduc_ev)                                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ALLOCATE(flag_color(nflags))                                                 !!!
 flag_color=0     ! Initially all flags have no color                         !!!
-CALL bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng)              !!!
+CALL bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng,neigh_flag_set,flag_color_set)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Output of the flag-graphs (.flg file) and faces/edges info (.fcs)          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=38,FILE='fgraphs',FORM='UNFORMATTED')                              !!!
 ! Running overall generated flag graphs                                      !!!
-DO ig=1,ng                                                                   !!!
+ig=0                                                                         !!!
+ALLOCATE(neigh_flag_j(nflags,3))                                             !!!
+DO i=1,ng                                                                    !!!
+  neigh_flag=neigh_flag_set(i,:,:)                                           !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+  ! Checking if repeated flag-graph                                          !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Reading flag graph                                                       !!!
+  same=.false.                                                               !!!
+  DO j=1,i-1                                                                 !!!
+    neigh_flag_j=neigh_flag_set(j,:,:)                                       !!!
+    CALL check_equiv_fgraphs(nflags,nf,flag,nface,neigh_flag, &              !!!
+                           & nflags,nf,flag,nface,neigh_flag_j,same)         !!!
+    IF(same) EXIT                                                            !!!
+  END DO                                                                     !!!
+  IF(same) CYCLE                                                             !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  READ(38) neigh_flag,flag_color                                             !!!
+  ! Getting flag colors                                                      !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  flag_color=flag_color_set(i,:)                                             !!!
+  ig=ig+1                                                                    !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Defining filenames for output                                            !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
@@ -73,66 +95,27 @@ DO ig=1,ng                                                                   !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Writing flag graph on the .flg file                                      !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!          
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(fileindex))//'.flg')                         !!!
-  WRITE(3,'(4I5)') nflags,nf,ne,nv                                           !!!
-  WRITE(3,'(100I7)') nface                                                   !!!
-  DO i=1,nflags                                                              !!!
-    WRITE(3,'(7I7)') flag(i,:),neigh_flag(i,:),flag_color(i)                 !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=3)                                                              !!!
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(fileindex))//'.b.flg',FORM='UNFORMATTED')    !!!
-  WRITE(3) nflags,nf,ne,nv                                                   !!!
-  WRITE(3) nface                                                             !!!
-  WRITE(3) flag                                                              !!!
-  WRITE(3) neigh_flag                                                        !!!
-  WRITE(3) flag_color                                                        !!!
-  CLOSE(UNIT=3)                                                              !!!
+  CALL write_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)  !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Getting faces/edges/vertices/bridges in faces                            !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   nmax=MAXVAL(nface)                                                         !!!
-  ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),b_in_f(nf,nmax))  !!!
   CALL fev_in_faces(nflags,flag,neigh_flag,nf,nface,f_in_f,e_in_f,v_in_f,b_in_f,nmax)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Creating symmetry maps                                                   !!!
+  ! Creating symmetry maps (allocations inside)                              !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  CALL flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,filename)          !!!
+  CALL flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Getting unequivalent faces and edges                                     !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ALLOCATE(uneq_face(nf),u_in_f(nf,nmax))                                    !!!
-  CALL neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,filename) !!!
+  CALL neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,nmaps,maps)!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Writing faces/edges info on the .fcs file                                !!!
+  ! Writing faces/edges info on the .fcs and .b.fcs files                    !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                  
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename))//'.fcs')                          !!!
-  ! Writing tensor sizes                                                     !!!
-  WRITE(3,'(4I5)') nf,ne,nv,nmax                                             !!!
-  ! Writing faces 1) size, uneq_f, 2) edges, and 3) vertices                 !!!
-  DO i=1,nf                                                                  !!!
-    WRITE(3,'(I0,2X,L1)') nface(i),uneq_face(i)                              !!!
-    WRITE(3,'(100I7)') f_in_f(i,1:nface(i))                                  !!!
-    WRITE(3,'(100I7)') e_in_f(i,1:nface(i))                                  !!!
-    WRITE(3,'(100I7)') v_in_f(i,1:nface(i))                                  !!!
-    WRITE(3,'(100L7)') b_in_f(i,1:nface(i))                                  !!!
-    WRITE(3,'(100L7)') u_in_f(i,1:nface(i))                                  !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=3)                                                              !!!
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')     !!!
-  ! Writing tensor sizes                                                     !!!
-  WRITE(3) nf,ne,nv,nmax                                                     !!!
-  ! Writing faces 1) size,uneq_f, 2) edges, and 3) vertices                  !!!
-  DO i=1,nf                                                                  !!!
-    WRITE(3) nface(i),uneq_face(i)                                           !!!
-    WRITE(3) f_in_f(i,1:nface(i))                                            !!!
-    WRITE(3) e_in_f(i,1:nface(i))                                            !!!
-    WRITE(3) v_in_f(i,1:nface(i))                                            !!!
-    WRITE(3) b_in_f(i,1:nface(i))                                            !!!
-    WRITE(3) u_in_f(i,1:nface(i))                                            !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=3)                                                              !!!
+  CALL write_fcs(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &       !!!
+                                                & b_in_f,u_in_f,fileindex)   !!!  
 END DO                                                                       !!!
-CLOSE(UNIT=38,STATUS='DELETE')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev_to_faces_info                                                !!!
+END PROGRAM fev2fcs                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
