@@ -1,26 +1,30 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE get_axes(nflags,flag,m1,filename)                                 !!!
+MODULE tools_symm                                                            !!!
+IMPLICIT NONE                                                                !!!
+PUBLIC                                                                       !!!
+PRIVATE:: highest_axis                                                       !!!
+CONTAINS                                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE get_rot(nflags,flag,m1,nmaps,maps,maps_nfixed,nrot,rot_e,rot_i,rot_n)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,n,p,nrot,n_c_axis,nflags,flag(nflags,3),fixed(3)               !!!
-INTEGER:: m1(nflags,nflags),mapa(nflags),nmaps,nfixed,d_kro                  !!!
-INTEGER,ALLOCATABLE:: rot(:,:)                                               !!!
-CHARACTER*100:: filename                                                     !!!
+INTEGER:: i,j,n,p,nrot,n_c_axis,nflags,flag(nflags,3),fixed(3),tmpsize       !!!
+INTEGER:: m1(nflags,nflags),mapa(nflags),nmaps,nfixed                        !!!
+INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
+INTEGER,ALLOCATABLE:: rot(:),rot_i(:),rot_n(:),rot2(:),rot_i2(:),rot_n2(:)   !!!
+CHARACTER*1,ALLOCATABLE:: rot_e(:),rot_e2(:)                                 !!!
 CHARACTER*1:: element(3)                                                     !!!
 LOGICAL:: new                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 element(1)='f'                                                               !!!
 element(2)='e'                                                               !!!
 element(3)='v'                                                               !!!
-nrot=MAXVAL(flag(:,1))+MAXVAL(flag(:,2))+MAXVAL(flag(:,3))                   !!!
-ALLOCATE(rot(nrot,3))                                                        !!!
-rot=0                                                                        !!!
+tmpsize=1                                                                    !!!
+ALLOCATE(rot_e(tmpsize),rot_i(tmpsize),rot_n(tmpsize),rot(tmpsize))          !!!
 nrot=0                                                                       !!!
-OPEN(UNIT=8,FILE=TRIM(ADJUSTL(filename))//'.map')                            !!!
-READ(8,*) nmaps                                                              !!!
 DO i=1,nmaps                                                                 !!!
-  READ(8,*) nfixed                                                           !!!
-  READ(8,*) mapa                                                             !!!
+  nfixed=maps_nfixed(i)                                                      !!!
+  mapa=maps(i,:)                                                             !!!
   ! Checking for rotation symmetries                                         !!!
   IF(nfixed.eq.1)THEN                                                        !!!
     ! Getting map rotation order                                             !!!
@@ -38,66 +42,61 @@ DO i=1,nmaps                                                                 !!!
           IF(fixed(1).eq.0) STOP 'Problem in rot'                            !!!
           new=.true.                                                         !!!
           DO p=1,nrot                                                        !!!
-            IF((fixed(1).eq.rot(p,1)).AND.(fixed(2).eq.rot(p,2)))THEN        !!!
+            IF((fixed(1).eq.rot(p)).AND.(fixed(2).eq.rot_i(p)))THEN          !!!
               new=.false.                                                    !!!
-              IF(n_c_axis.gt.rot(p,3)) rot(p,3)=fixed(3)                     !!!
+              IF(n_c_axis.gt.rot_n(p)) rot_n(p)=fixed(3)                     !!!
               EXIT                                                           !!!
             END IF                                                           !!!
           END DO                                                             !!!
           IF(new)THEN                                                        !!!
             nrot=nrot+1                                                      !!!
-            rot(nrot,1)=fixed(1)                                             !!!
-            rot(nrot,2)=fixed(2)                                             !!!
-            rot(nrot,3)=fixed(3)                                             !!!
+            IF(nrot.gt.tmpsize)THEN                                          !!!
+              ALLOCATE(rot_e2(2*tmpsize),rot_i2(2*tmpsize),rot_n2(2*tmpsize),rot2(2*tmpsize))
+              rot2(1:nrot-1)=rot                                             !!!
+              rot_e2(1:nrot-1)=rot_e                                         !!!
+              rot_i2(1:nrot-1)=rot_i                                         !!!
+              rot_n2(1:nrot-1)=rot_n                                         !!!
+              CALL MOVE_ALLOC(rot2,rot)                                      !!!
+              CALL MOVE_ALLOC(rot_e2,rot_e)                                  !!!
+              CALL MOVE_ALLOC(rot_i2,rot_i)                                  !!!
+              CALL MOVE_ALLOC(rot_n2,rot_n)                                  !!!
+              tmpsize=2*tmpsize                                              !!!
+            END IF                                                           !!!
+            rot(nrot)=fixed(1)                                               !!!
+            rot_e(nrot)=element(fixed(1))                                    !!!
+            rot_i(nrot)=fixed(2)                                             !!!
+            rot_n(nrot)=fixed(3)                                             !!!
           END IF                                                             !!!
         END DO                                                               !!!
       END IF                                                                 !!!
     END DO                                                                   !!!
   END IF                                                                     !!!
 END DO                                                                       !!!
-CLOSE(UNIT=8)                                                                !!!
-OPEN(UNIT=8,FILE=TRIM(ADJUSTL(filename))//'.rot')                            !!!
-WRITE(8,*) nrot                                                              !!!
-DO i=1,nrot                                                                  !!!
-  IF(rot(i,1).ne.1) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(rot(i,1)),rot(i,2),rot(i,3)                 !!!
-END DO                                                                       !!!
-DO i=1,nrot                                                                  !!!
-  IF(rot(i,1).ne.2) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(rot(i,1)),rot(i,2),rot(i,3)                 !!!
-END DO                                                                       !!!
-DO i=1,nrot                                                                  !!!
-  IF(rot(i,1).ne.3) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(rot(i,1)),rot(i,2),rot(i,3)                 !!!
-END DO                                                                       !!!
-CLOSE(UNIT=8)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE get_axes                                                      !!!
+END SUBROUTINE get_rot                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE get_mirror(nflags,flag,m2,filename)                               !!!
+SUBROUTINE get_mir(nflags,flag,m2,nmaps,maps,maps_nfixed,nmir,mir_e,mir_i,mir_m)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,js,n,p,nmir,nflags,flag(nflags,3),fixed(3),v1(3),v2(3)         !!!
-INTEGER:: m2(nflags,nflags),mapa(nflags),nmaps,nfixed,d_kro,tri_d_kro        !!!
-INTEGER,ALLOCATABLE:: mir(:,:)                                               !!!
-CHARACTER*100:: filename                                                     !!!
+INTEGER:: m2(nflags,nflags),mapa(nflags),nmaps,nfixed,tmpsize                !!!
+INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
+INTEGER,ALLOCATABLE:: mir(:),mir_i(:),mir_m(:),mir2(:),mir_i2(:),mir_m2(:)   !!!
+CHARACTER*1,ALLOCATABLE:: mir_e(:),mir_e2(:)                                 !!!
 CHARACTER*1:: element(3)                                                     !!!
 LOGICAL:: new                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 element(1)='f'                                                               !!!
 element(2)='e'                                                               !!!
 element(3)='v'                                                               !!!
-OPEN(UNIT=8,FILE=TRIM(ADJUSTL(filename))//'.map')                            !!!
-READ(8,*) nmaps                                                              !!!
-nmir=MAXVAL(flag(:,1))+MAXVAL(flag(:,2))+MAXVAL(flag(:,3))*nmaps             !!!
-ALLOCATE(mir(nmir,3))                                                        !!!
-mir=0                                                                        !!!
+tmpsize=1                                                                    !!!
+ALLOCATE(mir_e(tmpsize),mir_i(tmpsize),mir_m(tmpsize),mir(tmpsize))          !!!
 nmir=0                                                                       !!!
 DO i=1,nmaps                                                                 !!!
-  READ(8,*) nfixed                                                           !!!
-  READ(8,*) mapa                                                             !!!
+  nfixed=maps_nfixed(i)                                                      !!!
+  mapa=maps(i,:)                                                             !!!
   ! Checking for rotation symmetries                                         !!!
   IF(nfixed.eq.2)THEN                                                        !!!
     ! Searching for mirrors inside the map                                   !!!
@@ -117,81 +116,37 @@ DO i=1,nmaps                                                                 !!!
           IF(fixed(1).eq.0) STOP 'Problem in mir'                            !!!
           new=.true.                                                         !!!
           DO p=1,nmir                                                        !!!
-            IF((fixed(1).eq.mir(p,1)).AND.(fixed(2).eq.mir(p,2)).AND.(fixed(3).eq.mir(p,3)))THEN
+            IF((fixed(1).eq.mir(p)).AND.(fixed(2).eq.mir_i(p)).AND.(fixed(3).eq.mir_m(p)))THEN
               new=.false.                                                    !!!
               EXIT                                                           !!!
             END IF                                                           !!!
           END DO                                                             !!!
           IF(new)THEN                                                        !!!
             nmir=nmir+1                                                      !!!
-            mir(nmir,1)=fixed(1)                                             !!!
-            mir(nmir,2)=fixed(2)                                             !!!
-            mir(nmir,3)=fixed(3)                                             !!!
+            IF(nmir.gt.tmpsize)THEN                                          !!!
+              ALLOCATE(mir_e2(2*tmpsize),mir_i2(2*tmpsize),mir_m2(2*tmpsize),mir2(2*tmpsize))
+              mir2(1:nmir-1)=mir                                             !!!
+              mir_e2(1:nmir-1)=mir_e                                         !!!
+              mir_i2(1:nmir-1)=mir_i                                         !!!
+              mir_m2(1:nmir-1)=mir_m                                         !!!
+              CALL MOVE_ALLOC(mir2,mir)                                      !!!
+              CALL MOVE_ALLOC(mir_e2,mir_e)                                  !!!
+              CALL MOVE_ALLOC(mir_i2,mir_i)                                  !!!
+              CALL MOVE_ALLOC(mir_m2,mir_m)                                  !!!
+              tmpsize=2*tmpsize                                              !!!
+            END IF                                                           !!!
+            mir(nmir)=fixed(1)                                               !!!
+            mir_e(nmir)=element(fixed(1))                                    !!!
+            mir_i(nmir)=fixed(2)                                             !!!
+            mir_m(nmir)=fixed(3)                                             !!!            
           END IF                                                             !!!
         END DO                                                               !!!
       END IF                                                                 !!!
     END DO                                                                   !!!
   END IF                                                                     !!!
 END DO                                                                       !!!
-CLOSE(UNIT=8)                                                                !!!
-OPEN(UNIT=8,FILE=TRIM(ADJUSTL(filename))//'.mir')                            !!!
-WRITE(8,'(I0)') nmir                                                         !!!
-DO i=1,nmir                                                                  !!!
-  IF(mir(i,1).ne.1) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(mir(i,1)),mir(i,2),mir(i,3)                 !!!
-END DO                                                                       !!!
-DO i=1,nmir                                                                  !!!
-  IF(mir(i,1).ne.2) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(mir(i,1)),mir(i,2),mir(i,3)                 !!!
-END DO                                                                       !!!
-DO i=1,nmir                                                                  !!!
-  IF(mir(i,1).ne.3) CYCLE                                                    !!!
-  WRITE(8,'(A1,1X,2I7)') element(mir(i,1)),mir(i,2),mir(i,3)                 !!!
-END DO                                                                       !!!
-CLOSE(UNIT=8)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE get_mirror                                                    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE check_rot(nflags,flag,mapa,m1,nrot,rot,m)                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: n,j,p,q,m,nflags,flag(nflags,3),m1(nflags,nflags)                  !!!
-INTEGER:: mapa(nflags),fixed(2),rot(m,2)                                     !!!
-INTEGER:: nrot,d_kro                                                         !!!
-LOGICAL:: new                                                                !!!
-CHARACTER*1:: element(0:3)                                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-element(1)='f'                                                               !!!
-element(2)='e'                                                               !!!
-element(3)='v'                                                               !!!
-element(0)=' '                                                               !!!
-DO n=1,nflags                                                                !!!
-  IF(m1(n,mapa(n)).eq.1)THEN                                                 !!!
-    DO j=1,3                                                                 !!!
-      fixed=0                                                                !!!
-      IF(d_kro(flag(n,j),flag(mapa(n),j)).ne.1) CYCLE                        !!!
-      fixed(1)=j                                                             !!!
-      fixed(2)=flag(n,j)                                                     !!!
-      IF(fixed(1).eq.0) STOP 'Problem in rot'                                !!!
-      new=.true.                                                             !!!
-      q=nrot                                                                 !!!
-      DO p=1,q                                                               !!!
-        IF((fixed(1).eq.rot(p,1)).AND.(fixed(2).eq.rot(p,2)))THEN            !!!
-          new=.false.                                                        !!!
-        END IF                                                               !!!
-      END DO                                                                 !!!
-      IF(new)THEN                                                            !!!
-        nrot=nrot+1                                                          !!!
-        rot(nrot,1)=fixed(1)                                                 !!!
-        rot(nrot,2)=fixed(2)                                                 !!!
-      END IF                                                                 !!!
-    END DO                                                                   !!!
-  END IF                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE check_rot                                                     !!!
+END SUBROUTINE get_mir                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -219,93 +174,28 @@ END SUBROUTINE highest_axis                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE check_mir(nflags,flag,mapa,m2,nmirror,mapa_mirror,m)              !!!
+SUBROUTINE counting_mirrors(nflags,flag,m2,nmaps,maps,maps_nfixed,mirror_count)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,n,p,m,nflags,flag(nflags,3),mapa(nflags),m2(nflags,nflags)       !!!
-INTEGER:: nmirror,mirror(m,4),fixed(4),mapa_mirror(m,nflags),d_kro           !!!
-LOGICAL:: new                                                                !!!
-CHARACTER*1:: element(0:3)                                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-element(1)='f'  ! We store two fixed elements for the i-th mirror in         !!!
-element(2)='e'  ! mirror(i,j), with j=1,3 being 1,2,3 for f,e,v element      !!!
-element(3)='v'  ! and j=2,4 giving the index of the corresponding            !!!
-element(0)=' '  ! mirror(i,1) and mirror(i,3) elements                       !!!
-! Looking for mirror elements among all flags                                !!!
-DO n=1,nflags                                                                !!!
-  ! We have fixed elements when a flag is mapped to one of its neighbors     !!!
-  IF(m2(n,mapa(n)).eq.1)THEN                                                 !!!
-    p=1     ! Starting index for mirror(n,p). But, before, ...               !!!
-    fixed=0 ! ...we store a potential mirror(n,:) in fixed(:)                !!!
-    ! Checking if the face is a fixed element                                !!!
-    IF(((flag(n,2)-flag(mapa(n),2))**2.ne.0) &                               !!!
-    & .OR.((flag(n,3)-flag(mapa(n),3))**2.ne.0))THEN                         !!!
-      !This "IF" is to avoid computing face as fixed in a false flag         !!!
-      IF(d_kro(flag(n,1),flag(mapa(n),1)).eq.1) fixed(p)=1           ! "1" for face 
-      IF(d_kro(flag(n,1),flag(mapa(n),1)).eq.1) fixed(p+1)=flag(n,1) ! Face index
-      IF(d_kro(flag(n,1),flag(mapa(n),1)).eq.1) p=p+2                ! Update counter
-    END IF                                                                   !!!
-    ! Checking if the face is a fixed element                                !!!
-    IF(d_kro(flag(n,2),flag(mapa(n),2)).eq.1) fixed(p)=2           ! "2" for edge
-    IF(d_kro(flag(n,2),flag(mapa(n),2)).eq.1) fixed(p+1)=flag(n,2) ! Edge index
-    IF(d_kro(flag(n,2),flag(mapa(n),2)).eq.1) p=p+2                ! Update counter
-    ! Checking if the face is a fixed element                                !!!
-    IF(d_kro(flag(n,3),flag(mapa(n),3)).eq.1) fixed(p)=3           ! "3" for vertex
-    IF(d_kro(flag(n,3),flag(mapa(n),3)).eq.1) fixed(p+1)=flag(n,3) ! Vertex index
-    IF(d_kro(flag(n,3),flag(mapa(n),3)).eq.1) p=p+2                ! Update counter
-    ! Error check                                                            !!!
-    IF(p.ne.5) STOP 'Problem in mirror.'                                     !!!
-    ! Testing if new against the previous                                    !!!
-    new=.true.                                                               !!!
-    DO i=1,nmirror                                                           !!!
-      IF((fixed(1).eq.mirror(i,1)).AND.(fixed(2).eq.mirror(i,2)).AND. &      !!!
-       & (fixed(3).eq.mirror(i,3)).AND.(fixed(4).eq.mirror(i,4)))THEN        !!!
-        new=.false.                                                          !!!
-      END IF                                                                 !!!
-    END DO                                                                   !!!
-    ! Adding mirror to the set if new                                        !!!
-    IF(new)THEN                                                              !!!
-      nmirror=nmirror+1                                                      !!!
-      mirror(nmirror,1)=fixed(1)                                             !!!
-      mirror(nmirror,2)=fixed(2)                                             !!!
-      mirror(nmirror,3)=fixed(3)                                             !!!
-      mirror(nmirror,4)=fixed(4)                                             !!!
-      mapa_mirror(nmirror,:)=mapa                                            !!!
-      EXIT                                                                   !!!
-    END IF                                                                   !!!
-    ! If not new, we look for other representative                           !!!
-  END IF                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE check_mir                                                     !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE counting_mirrors(filename,nflags,flag,m2,mirror_count)            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: mapa(nflags),nflags,mirror_count,nfix,ilast                        !!!
-INTEGER:: flag(nflags,3),fixed(nflags,2),i,j,n,p,d_kro                       !!!
+INTEGER:: nflags,mapa(nflags),mirror_count,nfix,ilast                        !!!
+INTEGER:: flag(nflags,3),fixed(nflags,2),i,j,n,p                             !!!
 INTEGER:: m2(nflags,nflags),fix(2,2),nmaps,nfixed                            !!!
+INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
 INTEGER:: neighfix(nflags,2),nnfix(nflags),ii(2),nmirmaps                    !!!
 INTEGER,ALLOCATABLE:: walk(:)                                                !!!
 LOGICAL:: new,done,found,add                                                 !!!
 LOGICAL,ALLOCATABLE:: ok(:)                                                  !!!
-CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 mirror_count=0                                                               !!!
 nmirmaps=0                                                                   !!!
-OPEN(UNIT=8,FILE=TRIM(ADJUSTL(filename))//'.map')                            !!!
-READ(8,*) nmaps                                                              !!!
 DO i=1,nmaps                                                                 !!!
-  READ(8,*) nfixed                                                           !!!
+  nfixed=maps_nfixed(i)                                                      !!!
   IF(nfixed.eq.2)THEN                                                        !!!
-    READ(8,*) mapa                                                           !!!
+    mapa=maps(i,:)                                                           !!!
     nmirmaps=1                                                               !!!
     EXIT                                                                     !!!
   END IF                                                                     !!!
 END DO                                                                       !!!
-CLOSE(UNIT=8)                                                                !!!
 IF(nmirmaps.eq.0) RETURN                                                     !!!
 nfix=0                                                                       !!!
 fixed=0                                                                      !!!
@@ -403,34 +293,18 @@ END SUBROUTINE counting_mirrors                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE axis_off_mirrors(filename,nocross)                                !!!
+SUBROUTINE axis_off_mirrors(nrot,rot_i,rot_e,nmir,mir_i,mir_e,nocross)       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nrot,nmir,i,j                                                      !!!
-INTEGER,ALLOCATABLE:: rot_n(:),mir_n(:)                                      !!!
+INTEGER:: rot_i(nrot),mir_i(nmir)                                            !!!
 LOGICAL:: nocross                                                            !!!
-CHARACTER*100:: filename                                                     !!!
-CHARACTER*1,ALLOCATABLE:: rot_e(:),mir_e(:)                                  !!!
+CHARACTER*1:: rot_e(nrot),mir_e(nmir)                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=7,FILE=TRIM(ADJUSTL(filename))//'.rot')                            !!!
-READ(7,*) nrot                                                               !!!
-ALLOCATE(rot_e(nrot),rot_n(nrot))                                            !!!
-DO i=1,nrot                                                                  !!!
-  READ(7,*) rot_e(i),rot_n(i)                                                !!!
-END DO                                                                       !!!
-CLOSE(UNIT=7)                                                                !!!
-OPEN(UNIT=7,FILE=TRIM(ADJUSTL(filename))//'.mir')                            !!!
-READ(7,*) nmir                                                               !!!
-ALLOCATE(mir_e(nmir),mir_n(nmir))                                            !!!
-DO i=1,nmir                                                                  !!!
-  READ(7,*) mir_e(i),mir_n(i)                                                !!!
-END DO                                                                       !!!
-CLOSE(UNIT=7)                                                                !!!
-                                                                             !!!
 DO i=1,nrot                                                                  !!!
   nocross=.true.                                                             !!!
   DO j=1,nmir                                                                !!!
-    IF((rot_e(i).eq.mir_e(j)).AND.(rot_n(i).eq.mir_n(j)))THEN                !!!
+    IF((rot_e(i).eq.mir_e(j)).AND.(rot_i(i).eq.mir_i(j)))THEN                !!!
       nocross=.false.                                                        !!!
       EXIT                                                                   !!!
     END IF                                                                   !!!
@@ -442,37 +316,34 @@ END SUBROUTINE axis_off_mirrors                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE symmetry_group(nrotmaps,nmirmaps,nglimaps,filename,mirror_count,group)
+SUBROUTINE symmetry_group(nrotmaps,nmirmaps,nglimaps,mirror_count,nocross,group)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nrotmaps,nmirmaps,nglimaps,mirror_count                            !!!
 LOGICAL:: nocross                                                            !!!
-CHARACTER*100:: filename                                                     !!!
 CHARACTER*4:: group                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-group=''
-IF((nrotmaps.eq.5).AND.(nmirmaps.eq.6).AND.(nglimaps.eq.0)) group='p6m' ! p6mm
-IF((nrotmaps.eq.5).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p6'
-IF((nrotmaps.eq.2).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p3'
-IF((nrotmaps.eq.3).AND.(nmirmaps.eq.4).AND.(nglimaps.eq.0)) group='p4m' ! p4mm
-IF((nrotmaps.eq.3).AND.(nmirmaps.eq.2).AND.(nglimaps.eq.2)) group='p4g' ! p4gm
-IF((nrotmaps.eq.3).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p4'
-IF((nrotmaps.eq.1).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p2'
-IF((nrotmaps.eq.1).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.2)) group='pgg' ! pgg2
-IF((nrotmaps.eq.1).AND.(nmirmaps.eq.1).AND.(nglimaps.eq.1)) group='pmg' ! pmg2
-IF((nrotmaps.eq.0).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.1)) group='pg'
+group=''                                                                     !!!
+IF((nrotmaps.eq.5).AND.(nmirmaps.eq.6).AND.(nglimaps.eq.0)) group='p6m'      !!!
+IF((nrotmaps.eq.5).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p6'       !!!
+IF((nrotmaps.eq.2).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p3'       !!!
+IF((nrotmaps.eq.3).AND.(nmirmaps.eq.4).AND.(nglimaps.eq.0)) group='p4m'      !!!
+IF((nrotmaps.eq.3).AND.(nmirmaps.eq.2).AND.(nglimaps.eq.2)) group='p4g'      !!!
+IF((nrotmaps.eq.3).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p4'       !!!
+IF((nrotmaps.eq.1).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p2'       !!!
+IF((nrotmaps.eq.1).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.2)) group='pgg'      !!!
+IF((nrotmaps.eq.1).AND.(nmirmaps.eq.1).AND.(nglimaps.eq.1)) group='pmg'      !!!
+IF((nrotmaps.eq.0).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.1)) group='pg'       !!!
 IF((nrotmaps.eq.0).AND.(nmirmaps.eq.1).AND.(nglimaps.eq.0).AND.(mirror_count.eq.1)) group='cm'
 IF((nrotmaps.eq.0).AND.(nmirmaps.eq.1).AND.(nglimaps.eq.0).AND.(mirror_count.eq.2)) group='pm'
 IF((nrotmaps.eq.0).AND.(nmirmaps.eq.0).AND.(nglimaps.eq.0)) group='p1'       !!!
 IF((nrotmaps.eq.1).AND.(nmirmaps.eq.2).AND.(nglimaps.eq.0))THEN              !!!
   ! Cheking for axis off-mirrors                                             !!!
-  CALL axis_off_mirrors(filename,nocross)                                    !!!
   IF(nocross) group='cmm'                                                    !!!
   IF(.not.nocross) group='pmm'                                               !!!
 END IF                                                                       !!!
 IF((nrotmaps.eq.2).AND.(nmirmaps.eq.3).AND.(nglimaps.eq.0))THEN              !!!
   ! Cheking for axis off-mirrors                                             !!!
-  CALL axis_off_mirrors(filename,nocross)                                    !!!
   IF(nocross) group='p31m'                                                   !!!
   IF(.not.nocross) group='p3m1'                                              !!!
 END IF                                                                       !!!
@@ -499,7 +370,7 @@ END FUNCTION d_kro                                                           !!!
 FUNCTION tri_d_kro(v1,v2)                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: tri_d_kro,d_kro,v1(3),v2(3)                                        !!!
+INTEGER:: tri_d_kro,v1(3),v2(3)                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 tri_d_kro=d_kro(v1(1),v2(1))+ &                                              !!!
         & d_kro(v1(2),v2(2))+ &                                              !!!
@@ -507,4 +378,5 @@ tri_d_kro=d_kro(v1(1),v2(1))+ &                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END FUNCTION tri_d_kro                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+END MODULE tools_symm                                                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
