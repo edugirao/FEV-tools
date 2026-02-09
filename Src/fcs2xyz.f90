@@ -1,46 +1,54 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM faces2xyz                                                            !!!
+PROGRAM fcs2xyz                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_coor                                                               !!!
+USE tools_read                                                               !!!
+USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,nf,i0                                                            !!!
-CHARACTER*100:: filename_target                                              !!!
+INTEGER:: i,nf,i0,f0,ie1,ie2,nv1,nf1                                         !!!
+INTEGER,ALLOCATABLE:: nface1(:),x_in_f1(:,:),y_in_f1(:,:)                    !!!
+CHARACTER*100:: filename_target,filename_p                                   !!!
 CHARACTER*100,ALLOCATABLE:: filename_list(:)                                 !!!
+REAL(KIND=8),ALLOCATABLE:: r(:,:)                                            !!!
 LOGICAL:: have_file                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Getting target filename                                                    !!!
+! Getting target information                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=1,FILE='inp')                                                      !!!
-READ(1,*) filename_target                                                    !!!
-CLOSE(UNIT=1)                                                                !!!
+! Getting target filename                                                    !!!
+CALL read_init(filename_target,'inp')                                        !!!
 ! Early exit if xyz already exist                                            !!!
 INQUIRE(FILE=TRIM(ADJUSTL(filename_target))//'.xyz',EXIST=have_file)         !!!
-IF(have_file) STOP                                                           !!!
-! Getting system's size                                                      !!!
-OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename_target))//'.b.fcs',FORM='UNFORMATTED')!!!
-READ(1) nf                                                                   !!!
-CLOSE(UNIT=1)                                                                !!!
+IF(have_file) STOP TRIM(ADJUSTL(filename_target))//'.xyz already exists.'    !!!
+! Getting target's size                                                      !!!
+CALL read_fcs_only_nf(nf,filename_target)                                    !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Ancestor list                                                              !!!
-ALLOCATE(filename_list(nf))                                                  !!!
-filename_list(nf)=filename_target                                            !!!
-i0=2                                                                         !!!
-DO i=nf,2,-1                                                                 !!!
-  OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename_list(i)))//'.anc')                  !!!
-  READ(1,*) filename_list(i-1)                                               !!!
-  CLOSE(UNIT=1)                                                              !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename_list(i-1)))//'.xyz',EXIST=have_file)    !!!
-  IF(have_file)THEN                                                          !!!
-    i0=i                                                                     !!!
-    EXIT                                                                     !!!
-  END IF                                                                     !!!
-END DO                                                                       !!!
-IF(i0.eq.2)THEN                                                              !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename_list(1)))//'.xyz',EXIST=have_file)      !!!
-  IF(.not.have_file) i0=1                                                    !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL read_anc_list(nf,filename_target,filename_list,i0)                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Taking care of graphene if the first in the ancestor list                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(i0.eq.1)THEN                                                              !!!
+  filename_list(1)='6'                                                       !!!
+  CALL write_graphene                                                        !!!
+  CALL make_graphene                                                         !!!
+  i0=2                                                                       !!!
 END IF                                                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Creating strucuture(s) from ancestor list                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DO i=i0,nf                                                                   !!!
   print*, 'Making ',filename_list(i)                                         !!!
-  CALL make_a_xyz(filename_list(i))                                          !!!
+  ! Getting ancestor info                                                    !!!
+  CALL read_anc(filename_list(i),filename_p,f0,ie1,ie2)                      !!!
+  ! Optimizing the xyz                                                       !!!
+  CALL make_a_xyz(filename_list(i),filename_p,f0,ie1,ie2,nv1,r,nf1,nface1,x_in_f1,y_in_f1)
+  !  Writing the xyz                                                         !!!
+  CALL write_xyz(nv1,r,filename_list(i))                                     !!!
+  !  Writing the nxy                                                         !!!
+  CALL write_nxy(nf1,MAXVAL(nface1),nface1,x_in_f1,y_in_f1,filename_list(i)) !!!
+  DEALLOCATE(r,x_in_f1,y_in_f1,nface1)                                       !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM faces2xyz                                                        !!!
+END PROGRAM fcs2xyz                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
