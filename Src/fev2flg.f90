@@ -1,20 +1,27 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev_to_flag_graph_generator                                          !!!
+PROGRAM fev2flg                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_bipt                                                               !!!
+USE tools_flag                                                               !!!
+USE tools_maps                                                               !!!
+USE tools_read                                                               !!!
+USE tools_rule                                                               !!!
+USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,ne,nv,nflags,ng,ig,i                                            !!!
+INTEGER:: nf,ne,nv,nflags,ng,ig,i,j                                          !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),fev(:,:,:)                          !!!
-INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:)                          !!!
+INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:),neigh_flag_j(:,:)        !!!
 INTEGER,ALLOCATABLE:: reduc_ev(:,:)                                          !!!
+INTEGER,ALLOCATABLE:: neigh_flag_set(:,:,:),flag_color_set(:,:)              !!!
 CHARACTER*100:: filename,fileindex                                           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading .fev file                                                          !!!
+LOGICAL:: same                                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
-CALL read_init(filename)                                                     !!!
-! Reading FEV Data                                                           !!!
-CALL read_fev_size(nf,ne,nv,filename)                                        !!!
-ALLOCATE(fev(nf,ne,nv))                                                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL read_init(filename,'inp')                                               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading embedding tensor from .fev file (allocations inside)               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating flags                                                             !!!
@@ -48,17 +55,31 @@ DEALLOCATE(reduc_ev)                                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ALLOCATE(flag_color(nflags))                                                 !!!
 flag_color=0     ! Initially all flags have no color                         !!!
-CALL bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng)              !!!
+CALL bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng,neigh_flag_set,flag_color_set)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Output of the flag-graphs (.flg file) and faces/edges info (.fcs)          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(UNIT=38,FILE='fgraphs',FORM='UNFORMATTED')                              !!!
 ! Running overall generated flag graphs                                      !!!
-DO ig=1,ng                                                                   !!!
+ig=0                                                                         !!!
+ALLOCATE(neigh_flag_j(nflags,3))                                             !!!
+DO i=1,ng                                                                    !!!
+  neigh_flag=neigh_flag_set(i,:,:)                                           !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+  ! Checking if repeated flag-graph                                          !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Reading flag graph                                                       !!!
+  same=.false.                                                               !!!
+  DO j=1,i-1                                                                 !!!
+    neigh_flag_j=neigh_flag_set(j,:,:)                                       !!!
+    CALL check_equiv_fgraphs(nflags,nf,flag,nface,neigh_flag, &              !!!
+                           & nflags,nf,flag,nface,neigh_flag_j,same)         !!!
+    IF(same) EXIT                                                            !!!
+  END DO                                                                     !!!
+  IF(same) CYCLE                                                             !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  READ(38) neigh_flag,flag_color                                             !!!
+  ! Getting flag colors                                                      !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  flag_color=flag_color_set(i,:)                                             !!!
+  ig=ig+1                                                                    !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Defining filenames for output                                            !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -71,22 +92,8 @@ DO ig=1,ng                                                                   !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Writing flag graph on the .flg file                                      !!!
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!      
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(fileindex))//'.flg')                         !!!
-  WRITE(3,'(4I5)') nflags,nf,ne,nv                                           !!!
-  WRITE(3,'(100I7)') nface                                                   !!!
-  DO i=1,nflags                                                              !!!
-    WRITE(3,'(7I7)') flag(i,:),neigh_flag(i,:),flag_color(i)                 !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=3)                                                              !!!
-  OPEN(UNIT=3,FILE=TRIM(ADJUSTL(fileindex))//'.b.flg',FORM='UNFORMATTED')    !!!
-  WRITE(3) nflags,nf,ne,nv                                                   !!!
-  WRITE(3) nface                                                             !!!
-  WRITE(3) flag                                                              !!!
-  WRITE(3) neigh_flag                                                        !!!
-  WRITE(3) flag_color                                                        !!!
-  CLOSE(UNIT=3)                                                              !!!
+  CALL write_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,fileindex) !!!
 END DO                                                                       !!!
-CLOSE(UNIT=38,STATUS='DELETE')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev_to_flag_graph_generator                                      !!!
+END PROGRAM fev2flg                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
