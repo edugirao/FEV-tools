@@ -1,20 +1,25 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev_sum_rules                                                        !!!
+PROGRAM fev2sum                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+USE tools_flag                                                               !!!
+USE tools_read                                                               !!!
+USE tools_rule                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,k,nf,ne,nv,nflags                                              !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),fev(:,:,:)                          !!!
 INTEGER,ALLOCATABLE:: srule_fe(:),srule_fv(:),srule_ev(:)                    !!!
 CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading                                                                    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
-CALL read_init(filename)                                                     !!!
-! Reading FEV Data                                                           !!!
-CALL read_fev_size(nf,ne,nv,filename)                                        !!!
-ALLOCATE(fev(nf,ne,nv))                                                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL read_init(filename,'inp')                                               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading embedding tensor from .fev file (allocations inside)               !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Computing sum rules                                                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ALLOCATE(srule_fe(nv),srule_fv(ne),srule_ev(nf))                             !!!
 CALL sum_rules(nf,ne,nv,fev,srule_fe,srule_fv,srule_ev)                      !!!
 OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.sum')                            !!!
@@ -55,5 +60,5 @@ WRITE(1,'(100I7)') nface                                                     !!!
 WRITE(1,'(A)') '!************************************************!'          !!!
 CLOSE(UNIT=1)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev_sum_rules                                                    !!!
+END PROGRAM fev2sum                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
