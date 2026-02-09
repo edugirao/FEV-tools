@@ -1,4 +1,10 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+MODULE tools_flag                                                            !!!
+IMPLICIT NONE                                                                !!!
+PUBLIC                                                                       !!!
+PRIVATE:: fe_for_v                                                           !!!
+CONTAINS                                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE build_flags(nflags,flag,nf,ne,nv,fev) ! b**                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
@@ -149,138 +155,5 @@ END SUBROUTINE neigh_v                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE first_neighbors(nflags,neigh_flag,m2)                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,nflags,m2(nflags,nflags),neigh_flag(nflags,3)                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-m2=0                                                                         !!!
-DO i=1,nflags                                                                !!!
-  DO j=1,3                                                                   !!!
-    l=neigh_flag(i,j)                                                        !!!
-    m2(i,l)=1                                                                !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE first_neighbors                                               !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE second_neighbors(nflags,flag,m2,m1,flag_color)                    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nflags,flag(nflags,3),m2(nflags,nflags),flag_color(nflags)     !!!
-INTEGER:: m1(nflags,nflags)                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-m1=0                                                                         !!!
-DO i=1,nflags                                                                !!!
-  DO j=i+1,nflags                                                            !!!
-    IF(flag(i,1).eq.flag(j,1))THEN                                           !!!
-      IF(m2(i,j).ne.0) CYCLE                                                 !!!
-      IF(flag_color(i)*flag_color(j).eq.-1) CYCLE                            !!!
-      m1(i,j)=1                                                              !!!
-      m1(j,i)=1                                                              !!!
-      CYCLE                                                                  !!!
-    END IF                                                                   !!!
-    IF(flag(i,2).eq.flag(j,2))THEN                                           !!!
-      IF(m2(i,j).ne.0) CYCLE                                                 !!!
-      IF(flag_color(i)*flag_color(j).eq.-1) CYCLE                            !!!
-      m1(i,j)=1                                                              !!!
-      m1(j,i)=1                                                              !!!
-      CYCLE                                                                  !!!
-    END IF                                                                   !!!
-    IF(flag(i,3).eq.flag(j,3))THEN                                           !!!
-      IF(m2(i,j).ne.0) CYCLE                                                 !!!
-      IF(flag_color(i)*flag_color(j).eq.-1) CYCLE                            !!!
-      m1(i,j)=1                                                              !!!
-      m1(j,i)=1                                                              !!!
-      CYCLE                                                                  !!!
-    END IF                                                                   !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE second_neighbors                                              !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE fcs2flg(nf,nmax,nface,e_in_f,v_in_f,nflags,flag,neigh_flag,flag_color)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf)   !!!
-INTEGER:: e_in_f(nf,nmax),v_in_f(nf,nmax)                                    !!!
-INTEGER:: nf,nmax,nflags                                                     !!!
-INTEGER:: i,j,l,l0,f                                                         !!!
-LOGICAL:: done(nflags),out                                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Building flags, e-neighs and v-neighs                                      !!!
-l=0                                                                          !!!
-flag=0                                                                       !!!
-neigh_flag=0                                                                 !!!
-DO f=1,nf                                                                    !!!
-  l0=l+1                                                                     !!!
-  DO j=1,nface(f)-1                                                          !!!
-    l=l+1                                                                    !!!
-    flag(l,1)=f                                                              !!!
-    flag(l,2)=e_in_f(f,j)                                                    !!!
-    flag(l,3)=v_in_f(f,j)                                                    !!!
-    IF(j.ne.1) neigh_flag(l,2)=l-1                                           !!!
-    neigh_flag(l,3)=l+1                                                      !!!
-    l=l+1                                                                    !!!
-    flag(l,1)=f                                                              !!!
-    flag(l,2)=e_in_f(f,j)                                                    !!!
-    flag(l,3)=v_in_f(f,j+1)                                                  !!!
-    neigh_flag(l,2)=l+1                                                      !!!
-    neigh_flag(l,3)=l-1                                                      !!!
-  END DO                                                                     !!!
-  j=nface(f)                                                                 !!!
-  l=l+1                                                                      !!!
-  flag(l,1)=f                                                                !!!
-  flag(l,2)=e_in_f(f,j)                                                      !!!
-  flag(l,3)=v_in_f(f,j)                                                      !!!
-  neigh_flag(l,2)=l-1                                                        !!!
-  neigh_flag(l,3)=l+1                                                        !!!
-  l=l+1                                                                      !!!
-  flag(l,1)=f                                                                !!!
-  flag(l,2)=e_in_f(f,j)                                                      !!!
-  flag(l,3)=v_in_f(f,1)                                                      !!!
-  neigh_flag(l,2)=l0                                                         !!!
-  neigh_flag(l,3)=l-1                                                        !!!
-  neigh_flag(l0,2)=l                                                         !!!
-END DO                                                                       !!!
-! Building f-neighs                                                          !!!
-DO i=1,nflags                                                                !!!
-  IF(neigh_flag(i,1).ne.0) CYCLE                                             !!!
-  DO j=i+1,nflags                                                            !!!
-    IF(flag(i,2).eq.flag(j,2))THEN                                           !!!
-      IF(flag(i,3).eq.flag(j,3))THEN                                         !!!
-        neigh_flag(i,1)=j                                                    !!!
-        neigh_flag(j,1)=i                                                    !!!
-      END IF                                                                 !!!
-    END IF                                                                   !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-! Coloring flags                                                             !!!
-flag_color=0                                                                 !!!
-flag_color(1)=1                                                              !!!
-done=.false.                                                                 !!!
-DO j=1,nflags ! at most, does not need to go until nflags                    !!!
-  out=.true.                                                                 !!!
-  DO i=1,nflags                                                              !!!
-    IF(flag_color(i).ne.0)THEN                                               !!!
-      IF(.not.done(i))THEN                                                   !!!
-        flag_color(neigh_flag(i,:))=-flag_color(i)                           !!!
-        done(i)=.true.                                                       !!!
-        out=.false.                                                          !!!
-      END IF                                                                 !!!
-    END IF                                                                   !!!
-  END DO                                                                     !!!
-  IF(out) EXIT                                                               !!!
-END DO                                                                       !!!
-DO i=1,nflags                                                                !!!
-  IF(flag_color(i)*flag_color(neigh_flag(i,1)).ne.-1) stop 'aaaa'            !!!
-  IF(flag_color(i)*flag_color(neigh_flag(i,2)).ne.-1) stop 'aaaa'            !!!
-  IF(flag_color(i)*flag_color(neigh_flag(i,3)).ne.-1) stop 'aaaa'            !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE fcs2flg                                                       !!!
+END MODULE tools_flag                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
