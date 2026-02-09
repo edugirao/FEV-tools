@@ -139,5 +139,97 @@ END SUBROUTINE flg_to_fev                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE fev_in_faces(nflags,flag,neigh_flag,nf,nface,f_in_f,e_in_f,v_in_f,b_in_f,lmax)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: i,j,l,nf,nflags,lmax,last                                          !!!
+INTEGER:: flag(nflags,3),neigh_flag(nflags,3),nface(nf)                      !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:)        !!!
+LOGICAL,ALLOCATABLE,INTENT(OUT):: b_in_f(:,:)                                !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! f_in_f(i,j) -> neighbor face by i-th face                                  !!!
+! e_in_f(i,j) -> j-th edge in i-th face                                      !!!
+! v_in_f(i,j) -> j-th vertex in i-th face                                    !!!
+! -> e_in_f(i,j) starts in v_in_f(i,j) and finishes in v_in_f(i,j+1)         !!!
+! -> They're sorted by appearance around the face the face.                  !!!
+! -> Bridges appear twice. Vertices on bridges appear twice.                 !!!
+ALLOCATE(f_in_f(nf,lmax),e_in_f(nf,lmax),v_in_f(nf,lmax),b_in_f(nf,lmax))    !!!
+f_in_f=0                                                                     !!!
+e_in_f=0                                                                     !!!
+v_in_f=0                                                                     !!!
+b_in_f=.false.                                                               !!!
+DO i=1,nf                                                                    !!!
+  DO j=1,nflags                                                              !!!
+    IF(flag(j,1).eq.i)THEN                                                   !!!
+      l=1                                                                    !!!
+      f_in_f(i,l)=flag(neigh_flag(j,1),1)                                    !!!
+      e_in_f(i,l)=flag(j,2)                                                  !!!
+      v_in_f(i,l)=flag(j,3)                                                  !!!
+      IF(f_in_f(i,l).eq.i) b_in_f(i,l)=.true.                                !!!
+      last=j                                                                 !!!
+      DO                                                                     !!!
+        l=l+1                                                                !!!
+        last=neigh_flag(last,3)                                              !!!
+        last=neigh_flag(last,2)                                              !!!
+        f_in_f(i,l)=flag(neigh_flag(last,1),1)                               !!!
+        e_in_f(i,l)=flag(last,2)                                             !!!
+        v_in_f(i,l)=flag(last,3)                                             !!!
+        IF(f_in_f(i,l).eq.i) b_in_f(i,l)=.true.                              !!!
+        IF(l.eq.nface(i)) EXIT                                               !!!
+      END DO                                                                 !!!
+      EXIT                                                                   !!!
+    END IF                                                                   !!!
+  END DO                                                                     !!!
+END DO                                                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE fev_in_faces                                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,nmaps,maps)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: i,j,l,nflags,flag(nflags,3),f1,f2,e1,e2,nmaps                      !!!
+INTEGER:: nf,nface(nf),mapa(nflags),ne,nmax,e_in_f(nf,nmax)                  !!!
+INTEGER:: Fadj(nf,nf),Eadj(ne,ne),maps(nmaps,nflags)                         !!!
+LOGICAL:: uneq_face(nf),u_in_f(nf,nmax)                                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+uneq_face=.true.                                                             !!!
+u_in_f=.true.                                                                !!!
+Fadj=0                                                                       !!!
+Eadj=0                                                                       !!!
+DO i=1,nmaps                                                                 !!!
+  ! Getting a map                                                            !!!
+  mapa=maps(i,:)                                                             !!!
+  DO j=1,nflags                                                              !!!
+    f1=flag(j,1)                                                             !!!
+    f2=flag(mapa(j),1)                                                       !!!
+    Fadj(f1,f2)=1                                                            !!!
+    Fadj(f2,f1)=1                                                            !!!
+    e1=flag(j,2)                                                             !!!
+    e2=flag(mapa(j),2)                                                       !!!
+    Eadj(e1,e2)=1                                                            !!!
+    Eadj(e2,e1)=1                                                            !!!
+  END DO                                                                     !!!
+END DO                                                                       !!!
+DO i=1,nf                                                                    !!!
+  ! Eliminating equivalent faces                                             !!!
+  DO j=i+1,nf                                                                !!!
+    IF(Fadj(i,j).eq.1) uneq_face(j)=.false.                                  !!!
+  END DO                                                                     !!!
+  ! Eliminating equivalent edges within faces                                !!!
+  DO j=1,nface(i)                                                            !!!
+    DO l=j+1,nface(i)                                                        !!!
+      e1=e_in_f(i,j)                                                         !!!
+      e2=e_in_f(i,l)                                                         !!!
+      IF(Eadj(e1,e2).eq.1) u_in_f(i,l)=.false.                               !!!
+    END DO                                                                   !!!
+  END DO                                                                     !!!
+END DO                                                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE neq_fe                                                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE tools_conv                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
