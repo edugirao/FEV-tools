@@ -7,7 +7,7 @@ USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,nflags,ntramaps,fi,ei,vi,ne,nv,nf2,nflags2,ne2,nv2              !!!
 INTEGER:: n,i,j,l,nmaps                                                      !!!
-INTEGER,ALLOCATABLE:: flag(:,:),nface(:),m2(:,:),m1(:,:)                     !!!
+INTEGER,ALLOCATABLE:: flag(:,:),nface(:)                                     !!!
 INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:),mapa(:),map(:,:)         !!!
 INTEGER,ALLOCATABLE:: face(:),edge(:),vertex(:),fev(:,:,:)                   !!!
 INTEGER,ALLOCATABLE:: f2f(:),e2e(:),v2v(:)                                   !!!
@@ -23,19 +23,9 @@ CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Neighbors matrices (fev_flag.f90)                                          !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! First Neighbors                                                            !!!
-ALLOCATE(m2(nflags,nflags))                                                  !!!
-CALL first_neighbors(nflags,neigh_flag,m2)                                   !!!
-! Second Neighbors                                                           !!!
-ALLOCATE(m1(nflags,nflags))                                                  !!!
-CALL second_neighbors(nflags,flag,m2,m1,flag_color)                          !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Creating the maps                                                          !!!
-CALL creating_maps(nflags,flag,neigh_flag,m1,m2,nf,nface,nmaps,maps,maps_nfixed)
+CALL flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed)!
 ! Selecting only translation maps                                            !!!
 ALLOCATE(mapa(nflags),map(nmaps,nflags))                                     !!!
 ntramaps=0                                                                   !!!
