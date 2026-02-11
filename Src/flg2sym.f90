@@ -27,17 +27,16 @@ CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Neighbors matrices (fev_flag.f90)                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! First Neighbors                                                            !!!
-ALLOCATE(m2(nflags,nflags))                                                  !!!
+! First Neighbors (allocations inside)                                       !!!
 CALL first_neighbors(nflags,neigh_flag,m2)                                   !!!
-! Second Neighbors                                                           !!!
-ALLOCATE(m1(nflags,nflags))                                                  !!!
+! Second Neighbors (allocations inside)                                      !!!
 CALL second_neighbors(nflags,flag,m2,m1,flag_color)                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Searching maps                                                             !!!
-CALL creating_maps(nflags,flag,neigh_flag,m1,m2,nf,nface,nmaps,maps,maps_nfixed)
+CALL creating_maps(nflags,flag,neigh_flag,nf,nface,nmaps,maps)               !!!
+CALL get_nfixed(nflags,m1,m2,nmaps,maps,maps_nfixed)                         !!!
 ! Writing maps                                                               !!!
 CALL write_map(nflags,nmaps,maps,maps_nfixed,filename)                       !!!
 ! Identifying map types                                                      !!!
