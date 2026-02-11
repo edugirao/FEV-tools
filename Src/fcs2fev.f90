@@ -1,6 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PROGRAM fcs2fev                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Tool to faces-info to embedding tensor conversion. Converts a .fcs or .b.fcs file to .fev format.
 USE tools_read                                                               !!!
 USE tools_conv                                                               !!!
 USE tools_writ                                                               !!!
