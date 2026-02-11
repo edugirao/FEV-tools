@@ -96,15 +96,15 @@ INTEGER:: i,u                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs')                         !!!
 ! Writing tensor sizes                                                       !!!
-WRITE(u,*) nf,ne,nv,nmax                                                       !!!
+WRITE(u,*) nf,ne,nv,nmax                                                     !!!
 ! Writing faces 1) size,uneq_face, 2) edges, and 3) vertices                 !!!
 DO i=1,nf                                                                    !!!
-  WRITE(u,*) nface(i),uneq_face(i)                                             !!!
-  WRITE(u,*) f_in_f(i,1:nface(i))                                              !!!
-  WRITE(u,*) e_in_f(i,1:nface(i))                                              !!!
-  WRITE(u,*) v_in_f(i,1:nface(i))                                              !!!
-  WRITE(u,*) b_in_f(i,1:nface(i))                                              !!!
-  WRITE(u,*) u_in_f(i,1:nface(i))                                              !!!
+  WRITE(u,*) nface(i),uneq_face(i)                                           !!!
+  WRITE(u,*) f_in_f(i,1:nface(i))                                            !!!
+  WRITE(u,*) e_in_f(i,1:nface(i))                                            !!!
+  WRITE(u,*) v_in_f(i,1:nface(i))                                            !!!
+  WRITE(u,*) b_in_f(i,1:nface(i))                                            !!!
+  WRITE(u,*) u_in_f(i,1:nface(i))                                            !!!
 END DO                                                                       !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -442,7 +442,7 @@ INTEGER:: nv,i,u                                                             !!!
 REAL(KIND=8):: r(nv,3)                                                       !!!
 CHARACTER(LEN=*):: filename                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                            !!!
+OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                         !!!
 WRITE(u,*) nv                                                                !!!
 WRITE(u,*)                                                                   !!!
 DO i=1,nv                                                                    !!!
@@ -459,7 +459,7 @@ SUBROUTINE write_nxy(nf,nmax,nface,x_in_f,y_in_f,filename)                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,nmax,nface(nf),x_in_f(nf,nmax),y_in_f(nf,nmax)                  !!!
-INTEGER::u,i                                                                   !!!
+INTEGER::u,i                                                                 !!!
 CHARACTER(LEN=*):: filename                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.nxy')                         !!!
@@ -487,6 +487,43 @@ WRITE(u,*) f0,ie1,ie2                                                        !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_anc                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE write_sum_rules(nf,ne,nv,srule_fe,srule_fv,srule_ev,nface,filename)!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: nf,ne,nv                                                           !!!
+INTEGER:: srule_fe(nv),srule_fv(ne),srule_ev(nf),nface(nf)                   !!!
+INTEGER::u,i,j,k                                                             !!!
+CHARACTER(LEN=*):: filename                                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.sum')                         !!!
+WRITE(u,'(A)') '!****************** Sum Rules *******************!'          !!!
+WRITE(u,'(A,I0)') 'Euler Characteristic -> ',nf-ne+nv                        !!!
+WRITE(u,'(A)') '!------------------------------------------------!'          !!!
+WRITE(u,'(A)') 'Face-Edge rule test'                                         !!!
+DO k=1,nv                                                                    !!!
+  WRITE(u,'(A,I3,A,I2)')  'Vertex',k,'->',srule_fe(k)                        !!!
+END DO                                                                       !!!
+WRITE(u,'(A)') '!------------------------------------------------!'          !!!
+WRITE(u,'(A)') 'Face-Vertex rule test'                                       !!!
+DO j=1,ne                                                                    !!!
+  WRITE(u,'(A,I3,A,I2)') 'Edge',j,'->',srule_fv(j)                           !!!
+END DO                                                                       !!!
+WRITE(u,'(A)') '!------------------------------------------------!'          !!!
+WRITE(u,'(A)') 'Edge-Vertex rule test'                                       !!!
+DO i=1,nf                                                                    !!!
+  WRITE(u,'(A,I3,A,I2)')  'Face',i,'->',srule_ev(i)                          !!!
+END DO                                                                       !!!
+WRITE(u,'(A)') '!************************************************!'          !!!
+WRITE(u,'(A)') '! Faces Sizes                                    !'          !!!
+WRITE(u,'(A)') '!------------------------------------------------!'          !!!
+WRITE(u,'(100I7)') nface                                                     !!!
+WRITE(u,'(A)') '!************************************************!'          !!!
+CLOSE(UNIT=u)                                                                !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE write_sum_rules                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
