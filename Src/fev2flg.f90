@@ -30,11 +30,9 @@ nflags=6*nv ! We have 6 flags for each vertex                                !!!
 ALLOCATE(flag(nflags,3))                                                     !!!
 flag=0                                                                       !!!
 CALL build_flags(nflags,flag,nf,ne,nv,fev)                                   !!!
+! Faces sizes from flags (allocation inside)                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Faces sizes                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(nface(nf))                                                          !!!
-CALL faces_sizes(nf,nflags,flag,nface)                                       !!!
+CALL nfaces_from_flg(nf,nflags,flag,nface)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Neighbor flags                                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
