@@ -1,6 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PROGRAM fcs2flg                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Tool for faces-info to flag-graph conversion. Converts a .fcs or .b.fcs file to .flg and .b.flg formats.
 USE tools_read                                                               !!!
 USE tools_conv                                                               !!!
 USE tools_writ                                                               !!!
