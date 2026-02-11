@@ -2,21 +2,23 @@
 MODULE tools_maps                                                            !!!
 IMPLICIT NONE                                                                !!!
 PUBLIC                                                                       !!!
-PRIVATE:: same_local,check_map,n_fix_elements,check_map_ab,same_local_ab     !!!
+PRIVATE:: n_fix_elements,check_map,same_local                                !!!
 CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE creating_maps(nflags,flag,neigh_flag,m1,m2,nf,nface,nmaps,maps,maps_nfixed)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE creating_maps(nflags,flag,neigh_flag,nf,nface,nmaps,maps)         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nmaps,nflags,flag(nflags),neigh_flag(nflags,3),nfixed,tmpsize  !!!
-INTEGER:: nf,nface(nf),mapa(nflags),m1(nflags,nflags),m2(nflags,nflags)      !!!
-INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:),vtmp(:),mtmp(:,:)             !!!
+INTEGER:: i,j,nmaps,nflags,flag(nflags),neigh_flag(nflags,3),tmpsize         !!!
+INTEGER:: nf,nface(nf),mapa(nflags)                                          !!!
+INTEGER,ALLOCATABLE:: maps(:,:),mtmp(:,:)                                    !!!
 LOGICAL:: skip(nflags),map                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 skip=.false.                                                                 !!!
 nmaps=0                                                                      !!!
 tmpsize=1                                                                    !!!
-ALLOCATE(maps_nfixed(tmpsize),maps(tmpsize,nflags))                          !!!
+ALLOCATE(maps(tmpsize,nflags))                                               !!!
 i=1                                                                          !!!
 ! Avoiding identity symmetry                                                 !!!
 skip(i)=.true.                                                               !!!
@@ -24,35 +26,28 @@ DO j=1,nflags                                                                !!!
   ! Avoiding repeated maps                                                   !!!
   IF(skip(j)) cycle                                                          !!!
   ! Cheking for a map starting with i->j                                     !!!
-  CALL check_map(nflags,flag,neigh_flag,nf,nface,i,j,map,mapa)               !!!
+  CALL check_map(nflags,nf,flag,nface,neigh_flag, &                          !!!
+             &   nflags,nf,flag,nface,neigh_flag,i,j,map,mapa)               !!!
   IF(.not.map) CYCLE                                                         !!!
   ! Preparing to avoiding repeated maps later                                !!!
   skip(mapa(1))=.true.                                                       !!!
-  ! Calculating max number of fixed elements                                 !!!
-  CALL n_fix_elements(nflags,mapa,m1,m2,nfixed)                              !!!
   ! Updating number of maps                                                  !!!  
   nmaps=nmaps+1                                                              !!!  
-  ! Expanding maps and maps_nfixed if needed                                 !!!  
+  ! Expanding maps if needed                                                 !!!  
   IF(nmaps.gt.tmpsize)THEN                                                   !!!
-    ALLOCATE(vtmp(2*tmpsize),mtmp(2*tmpsize,nflags))                         !!!
-    vtmp(1:nmaps-1)=maps_nfixed                                              !!!
-    vtmp(nmaps:2*tmpsize)=0                                                  !!!
+    ALLOCATE(mtmp(2*tmpsize,nflags))                                         !!!
     mtmp(1:nmaps-1,:)=maps                                                   !!!
     mtmp(nmaps:2*tmpsize,:)=0                                                !!!
-    CALL MOVE_ALLOC(vtmp,maps_nfixed)                                        !!!
     CALL MOVE_ALLOC(mtmp,maps)                                               !!!
     tmpsize=2*tmpsize                                                        !!!
   END IF                                                                     !!!
   ! Storing map                                                              !!!  
-  maps_nfixed(nmaps)=nfixed                                                  !!!
   maps(nmaps,:)=mapa                                                         !!!
 END DO                                                                       !!!
-! Redimensioninf maps and maps_nfixed if needed                              !!!
+! Redimensioninf maps if needed                                              !!!
 IF(nmaps.lt.tmpsize)THEN                                                     !!!
-  ALLOCATE(vtmp(nmaps),mtmp(nmaps,nflags))                                   !!!
-  vtmp=maps_nfixed(1:nmaps)                                                  !!!
+  ALLOCATE(mtmp(nmaps,nflags))                                               !!!
   mtmp=maps(1:nmaps,:)                                                       !!!
-  CALL MOVE_ALLOC(vtmp,maps_nfixed)                                          !!!
   CALL MOVE_ALLOC(mtmp,maps)                                                 !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -60,132 +55,22 @@ END SUBROUTINE creating_maps                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE same_local(nflags,flag,neigh_flag,nf,nface,i,j,same)              !!!
+SUBROUTINE get_nfixed(nflags,m1,m2,nmaps,maps,maps_nfixed)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,ii,iii,jj,jjj,nflags,nf                                        !!!
-INTEGER:: flag(nflags,3),nface(nf),neigh_flag(nflags,3)                      !!!
-LOGICAL:: same                                                               !!!
+INTEGER:: i,nmaps,nflags,nfixed                                              !!!
+INTEGER:: mapa(nflags),m1(nflags,nflags),m2(nflags,nflags),maps(nmaps,nflags)!!!
+INTEGER,ALLOCATABLE:: maps_nfixed(:)                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-same=.false.                                                                 !!!
-! Same polygon for the flag                                                  !!!
-IF(nface(flag(i,1)).eq.nface(flag(j,1)))THEN                                 !!!
-  ! Same polygon for the face-neighbor flag                                  !!!
-  ii=neigh_flag(i,1)                                                         !!!
-  jj=neigh_flag(j,1)                                                         !!!
-  IF(nface(flag(ii,1)).eq.nface(flag(jj,1)))THEN                             !!!
-    ! Same polygon for the face-neighbor of the edge-neighbor flag           !!!
-    iii=neigh_flag(neigh_flag(i,2),1)                                        !!!
-    jjj=neigh_flag(neigh_flag(j,2),1)                                        !!!
-    IF(nface(flag(iii,1)).eq.nface(flag(jjj,1)))THEN                         !!!
-      same=.true.                                                            !!!
-    END IF                                                                   !!!
-  END IF                                                                     !!!
-END IF                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE same_local                                                    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE check_map(nflags,flag,neigh_flag,nf,nface,i,j,map,mapa)           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,m,p,inext,jnext,nflags,mapa(nflags),nf,f1,f2,e1,e2,v1,v2     !!!
-INTEGER:: flag(nflags,3),nface(nf),neigh_flag(nflags,3),mapa_inv(nflags)     !!!
-LOGICAL:: ok(nflags),same,map,candidate                                      !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Checking for local symmetry                                                !!!
-CALL same_local(nflags,flag,neigh_flag,nf,nface,i,j,same)                    !!!
-! Flags not ok? Not a map! Get out!                                          !!!
-IF(.not.same)THEN                                                            !!!
-  map=.false.                                                                !!!
-  RETURN                                                                     !!!
-END IF                                                                       !!!
-! Empty initial map, except for the i-th position                            !!!
-mapa=0                                                                       !!!
-mapa(i)=j                                                                    !!!
-mapa_inv=0                                                                   !!!
-mapa_inv(j)=i                                                                !!!
-! No flags ok, excpt the i-th one                                            !!!
-ok=.false.                                                                   !!!
-ok(i)=.true.                                                                 !!!
-! Next flags to be compared                                                  !!!
-inext=neigh_flag(i,1)                                                        !!!
-jnext=neigh_flag(j,1)                                                        !!!
-! Initially, we have a map                                                   !!!
-map=.true.                                                                   !!!
-DO p=1,nflags-1                                                              !!!
-  ! First check if jnext hasn't been taken by someone before.                !!!
-  IF(mapa_inv(jnext).ne.0)THEN                                               !!!
-    ! Flags not ok, not a map, get out                                       !!!
-    map=.false.                                                              !!!
-    RETURN                                                                   !!!
-  END IF                                                                     !!!
-  ! Compare the inext and jnext flags                                        !!!
-  CALL same_local(nflags,flag,neigh_flag,nf,nface,inext,jnext,same)          !!!
-  IF(same)THEN                                                               !!!
-    ! Flags with same local symmetry, add to map                             !!!
-    mapa(inext)=jnext                                                        !!!
-    mapa_inv(jnext)=inext                                                    !!!
-    ok(inext)=.true.                                                         !!!
-  ELSE IF(.not.same)THEN                                                     !!!
-    ! Flags not ok, not a map, get out                                       !!!
-    map=.false.                                                              !!!
-    RETURN                                                                   !!!
-  END IF                                                                     !!!
-  ! Search next testing flag over the neighs of ok flags                     !!!
-  candidate=.false.                                                          !!!
-  DO m=1,nflags                                                              !!!
-    IF(ok(m))THEN                                                            !!!
-      DO l=1,3                                                               !!!
-        IF(.not.ok(neigh_flag(m,l)))THEN                                     !!!
-          candidate=.true.                                                   !!!
-          inext=neigh_flag(m,l)                                              !!!
-          jnext=neigh_flag(mapa(m),l)                                        !!!
-          EXIT                                                               !!!
-        END IF                                                               !!!
-      END DO                                                                 !!!
-    END IF                                                                   !!!
-    IF(candidate) EXIT                                                       !!!
-  END DO                                                                     !!!
+ALLOCATE(maps_nfixed(nmaps))                                                 !!!
+DO i=1,nmaps                                                                 !!!
+  mapa=maps(i,:)                                                             !!!
+  ! Calculating max number of fixed elements                                 !!!
+  CALL n_fix_elements(nflags,mapa,m1,m2,nfixed)                              !!!
+  maps_nfixed(i)=nfixed                                                      !!!
 END DO                                                                       !!!
-! Double check if a map                                                      !!!
-IF(map)THEN                                                                  !!!
-  ! Checking for double-mapped elements                                      !!!
-  DO m=1,nflags                                                              !!!
-    f1=flag(m,1)                                                             !!!
-    f2=flag(mapa(m),1)                                                       !!!
-    e1=flag(m,2)                                                             !!!
-    e2=flag(mapa(m),2)                                                       !!!
-    v1=flag(m,3)                                                             !!!
-    v2=flag(mapa(m),3)                                                       !!!
-    DO l=m+1,nflags                                                          !!!
-      ! Checking face mapping                                                !!!
-      IF(flag(l,1).eq.f1)THEN                                                !!!
-        IF(flag(mapa(l),1).ne.f2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-      ! Checking edge mapping                                                !!!
-      IF(flag(l,2).eq.e1)THEN                                                !!!
-        IF(flag(mapa(l),2).ne.e2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-      ! Checking vertex mapping                                              !!!
-      IF(flag(l,3).eq.v1)THEN                                                !!!
-        IF(flag(mapa(l),3).ne.v2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-    END DO                                                                   !!!
-  END DO                                                                     !!!
-END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE check_map                                                     !!!
+END SUBROUTINE get_nfixed                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -239,16 +124,17 @@ SUBROUTINE check_equiv_fgraphs(nflags1,nf1,flag1,nface1,neigh_flag1, &       !!!
                                 &  nflags2,nf2,flag2,nface2,neigh_flag2,same)!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nflags1,nf1,flag1(nflags1),nface1(nf1),neigh_flag1(nflags1,3)  !!!
+INTEGER:: nflags1,nf1,flag1(nflags1),nface1(nf1),neigh_flag1(nflags1,3)      !!!
 INTEGER:: nflags2,nf2,flag2(nflags2),nface2(nf2),neigh_flag2(nflags2,3)      !!!
+INTEGER:: i,j                                                                !!!
 LOGICAL:: map,same                                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 same=.false.                                                                 !!!
 i=1                                                                          !!!
 DO j=1,nflags2                                                               !!!
   ! Cheking for a map starting with i->j                                     !!!
-  CALL check_map_ab(nflags1,nf1,flag1,nface1,neigh_flag1, &                  !!!
-                 &  nflags2,nf2,flag2,nface2,neigh_flag2,i,j,map)            !!!
+  CALL check_map(nflags1,nf1,flag1,nface1,neigh_flag1, &                     !!!
+              &  nflags2,nf2,flag2,nface2,neigh_flag2,i,j,map)               !!!
   IF(map)THEN                                                                !!!
     same=.true.                                                              !!!
     RETURN                                                                   !!!
@@ -259,19 +145,20 @@ END SUBROUTINE check_equiv_fgraphs                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE check_map_ab(nflags1,nf1,flag1,nface1,neigh_flag1, &              !!!
-                    &   nflags2,nf2,flag2,nface2,neigh_flag2,i,j,map)        !!!
+SUBROUTINE check_map(nflags1,nf1,flag1,nface1,neigh_flag1, &                 !!!
+                    &   nflags2,nf2,flag2,nface2,neigh_flag2,i,j,map,mapping)!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,m,p,inext,jnext,nflags1,nflags2,mapa(nflags1),nf1,nf2,f1,f2,e1,e2,v1,v2
+INTEGER:: i,j,l,m,p,inext,jnext,nflags1,nflags2,nf1,nf2,f1,f2,e1,e2,v1,v2    !!!
 INTEGER:: flag1(nflags1,3),nface1(nf1),neigh_flag1(nflags1,3)                !!!
 INTEGER:: flag2(nflags2,3),nface2(nf2),neigh_flag2(nflags2,3)                !!!
-INTEGER:: mapa_m,mapa_l,times_mapped(nflags2)                                !!!
+INTEGER,INTENT(OUT),OPTIONAL:: mapping(nflags1)                              !!!
+INTEGER:: mapa_m,mapa_l,times_mapped(nflags2),mapa(nflags1)                  !!!
 LOGICAL:: ok(nflags1),same,map,candidate                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Checking for local symmetry                                                !!!
-CALL same_local_ab(nflags1,nf1,flag1,nface1,neigh_flag1, &                   !!!
-                &  nflags2,nf2,flag2,nface2,neigh_flag2,i,j,same)            !!!
+CALL same_local(nflags1,nf1,flag1,nface1,neigh_flag1, &                      !!!
+             &  nflags2,nf2,flag2,nface2,neigh_flag2,i,j,same)               !!!
 ! Flags not ok? Not a map! Get out!                                          !!!
 IF(.not.same)THEN                                                            !!!
   map=.false.                                                                !!!
@@ -292,8 +179,8 @@ jnext=neigh_flag2(j,1)                                                       !!!
 map=.true.                                                                   !!!
 DO p=1,nflags1-1                                                             !!!
   ! Compare the inext and jnext flags                                        !!!
-  CALL same_local_ab(nflags1,nf1,flag1,nface1,neigh_flag1, &                 !!!
-                &    nflags2,nf2,flag2,nface2,neigh_flag2,inext,jnext,same)  !!!
+  CALL same_local(nflags1,nf1,flag1,nface1,neigh_flag1, &                    !!!
+             &    nflags2,nf2,flag2,nface2,neigh_flag2,inext,jnext,same)     !!!
   IF(same)THEN                                                               !!!
     ! Flags with same local symmetry, add to map                             !!!
     mapa(inext)=jnext                                                        !!!
@@ -321,61 +208,59 @@ DO p=1,nflags1-1                                                             !!!
     IF(candidate) EXIT                                                       !!!
   END DO                                                                     !!!
 END DO                                                                       !!!
+IF(.not.map) RETURN                                                          !!!
 ! Double check if a map                                                      !!!
-IF(map)THEN                                                                  !!!
-  DO m=2,nflags2                                                             !!!
-    DO l=1,m-1                                                               !!!
-      IF(times_mapped(l).ne.times_mapped(m))THEN                             !!!
+DO m=2,nflags2                                                               !!!
+  DO l=1,m-1                                                                 !!!
+    IF(times_mapped(l).ne.times_mapped(m))THEN                               !!!
+      map=.false.                                                            !!!
+      RETURN                                                                 !!!
+    END IF                                                                   !!!
+  END DO                                                                     !!!
+END DO                                                                       !!!
+! Double check if a map                                                      !!!
+! Checking for double-mapped elements                                        !!!
+DO m=1,nflags1                                                               !!!
+  mapa_m=mapa(m)                                                             !!!
+  f1=flag1(m,1)                                                              !!!
+  f2=flag2(mapa_m,1)                                                         !!!
+  e1=flag1(m,2)                                                              !!!
+  e2=flag2(mapa_m,2)                                                         !!!
+  v1=flag1(m,3)                                                              !!!
+  v2=flag2(mapa_m,3)                                                         !!!
+  DO l=m+1,nflags1                                                           !!!
+    mapa_l=mapa(l)                                                           !!!
+    ! Checking face mapping                                                  !!!
+    IF(flag1(l,1).eq.f1)THEN                                                 !!!
+      IF(flag2(mapa_l,1).ne.f2)THEN                                          !!!
         map=.false.                                                          !!!
         RETURN                                                               !!!
       END IF                                                                 !!!
-    END DO                                                                   !!!
+    END IF                                                                   !!!
+    ! Checking edge mapping                                                  !!!
+    IF(flag1(l,2).eq.e1)THEN                                                 !!!
+      IF(flag2(mapa_l,2).ne.e2)THEN                                          !!!
+        map=.false.                                                          !!!
+        RETURN                                                               !!!
+      END IF                                                                 !!!
+    END IF                                                                   !!!
+    ! Checking vertex mapping                                                !!!
+    IF(flag1(l,3).eq.v1)THEN                                                 !!!
+      IF(flag2(mapa_l,3).ne.v2)THEN                                          !!!
+        map=.false.                                                          !!!
+        RETURN                                                               !!!
+      END IF                                                                 !!!
+    END IF                                                                   !!!
   END DO                                                                     !!!
-END IF                                                                       !!!
-! Double check if a map                                                      !!!
-IF(map)THEN                                                                  !!!
-  ! Checking for double-mapped elements                                      !!!
-  DO m=1,nflags1                                                             !!!
-    mapa_m=mapa(m)                                                           !!!
-    f1=flag1(m,1)                                                            !!!
-    f2=flag2(mapa_m,1)                                                       !!!
-    e1=flag1(m,2)                                                            !!!
-    e2=flag2(mapa_m,2)                                                       !!!
-    v1=flag1(m,3)                                                            !!!
-    v2=flag2(mapa_m,3)                                                       !!!
-    DO l=m+1,nflags1                                                         !!!
-      mapa_l=mapa(l)                                                         !!!
-      ! Checking face mapping                                                !!!
-      IF(flag1(l,1).eq.f1)THEN                                               !!!
-        IF(flag2(mapa_l,1).ne.f2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-      ! Checking edge mapping                                                !!!
-      IF(flag1(l,2).eq.e1)THEN                                               !!!
-        IF(flag2(mapa_l,2).ne.e2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-      ! Checking vertex mapping                                              !!!
-      IF(flag1(l,3).eq.v1)THEN                                               !!!
-        IF(flag2(mapa_l,3).ne.v2)THEN                                        !!!
-          map=.false.                                                        !!!
-          RETURN                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-    END DO                                                                   !!!
-  END DO                                                                     !!!
-END IF                                                                       !!!
+END DO                                                                       !!!
+IF(PRESENT(mapping)) mapping=mapa                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE check_map_ab                                                  !!!
+END SUBROUTINE check_map                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE same_local_ab(nflags1,nf1,flag1,nface1,neigh_flag1, &             !!!
-                     &   nflags2,nf2,flag2,nface2,neigh_flag2,i,j,same)      !!!
+SUBROUTINE same_local(nflags1,nf1,flag1,nface1,neigh_flag1, &                !!!
+                  &   nflags2,nf2,flag2,nface2,neigh_flag2,i,j,same)         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,ii,iii,jj,jjj,nflags1,nf1,nflags2,nf2                          !!!
@@ -399,7 +284,7 @@ IF(nface1(flag1(i,1)).eq.nface2(flag2(j,1)))THEN                             !!!
   END IF                                                                     !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE same_local_ab                                                 !!!
+END SUBROUTINE same_local                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -407,15 +292,16 @@ SUBROUTINE flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nf
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nmaps       !!!
-INTEGER:: nface(nf),m2(nflags,nflags),m1(nflags,nflags),nf,nflags            !!!
-INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
+INTEGER:: nface(nf),nf,nflags                                                !!!
+INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:),m2(:,:),m1(:,:)               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! First Neighbors                                                            !!!
 CALL first_neighbors(nflags,neigh_flag,m2)                                   !!!
 ! Second Neighbors                                                           !!!
 CALL second_neighbors(nflags,flag,m2,m1,flag_color)                          !!!
 ! Creating the maps (allocations inside)                                     !!!
-CALL creating_maps(nflags,flag,neigh_flag,m1,m2,nf,nface,nmaps,maps,maps_nfixed)
+CALL creating_maps(nflags,flag,neigh_flag,nf,nface,nmaps,maps)               !!!
+CALL get_nfixed(nflags,m1,m2,nmaps,maps,maps_nfixed)                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE flg2map                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -424,8 +310,10 @@ END SUBROUTINE flg2map                                                       !!!
 SUBROUTINE first_neighbors(nflags,neigh_flag,m2)                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,nflags,m2(nflags,nflags),neigh_flag(nflags,3)                !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: m2(:,:)                                    !!!
+INTEGER:: i,j,l,nflags,neigh_flag(nflags,3)                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ALLOCATE(m2(nflags,nflags))                                                  !!!
 m2=0                                                                         !!!
 DO i=1,nflags                                                                !!!
   DO j=1,3                                                                   !!!
@@ -441,9 +329,10 @@ END SUBROUTINE first_neighbors                                               !!!
 SUBROUTINE second_neighbors(nflags,flag,m2,m1,flag_color)                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: m1(:,:)                                    !!!
 INTEGER:: i,j,nflags,flag(nflags,3),m2(nflags,nflags),flag_color(nflags)     !!!
-INTEGER:: m1(nflags,nflags)                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ALLOCATE(m1(nflags,nflags))                                                  !!!
 m1=0                                                                         !!!
 DO i=1,nflags                                                                !!!
   DO j=i+1,nflags                                                            !!!
