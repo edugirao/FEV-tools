@@ -34,10 +34,9 @@ ALLOCATE(flag(nflags,3))                                                     !!!
 flag=0                                                                       !!!
 CALL build_flags(nflags,flag,nf,ne,nv,fev)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Faces sizes                                                                !!!
+! Faces sizes from flags (allocation inside)                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(nface(nf))                                                          !!!
-CALL faces_sizes(nf,nflags,flag,nface)                                       !!!
+CALL nfaces_from_flg(nf,nflags,flag,nface)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Neighbor flags                                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
