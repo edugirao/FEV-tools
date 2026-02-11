@@ -29,7 +29,7 @@ CHARACTER*100,ALLOCATABLE:: gen_filenames(:)                                 !!!
 ! Structures' size                                                           !!!
 CALL read_igen(nf,'igen')                                                    !!!
 ! Create gen-0 if the case                                                   !!!
-IF(nf.eq.0) CALL make_gen1                                                   !!!
+IF(nf.eq.0) CALL write_graphene(1,1,1,1,1,1)                                 !!!
 ! Generation size                                                            !!!
 CALL read_gensize(nf,nsys_p)                                                 !!!
 ! Reading generation filenames                                               !!!

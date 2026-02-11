@@ -762,22 +762,22 @@ END SUBROUTINE correct_coordinates                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_graphene                                                     !!!
+SUBROUTINE make_graphene(i0,filename)                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,nv,x_in_f(1,6),y_in_f(1,6),v_in_f(1,6),nface(1)                 !!!
-INTEGER:: nn(2),neigh(2,3),neigh_x(2,3),neigh_y(2,3),nmax                    !!!
+INTEGER:: nn(2),neigh(2,3),neigh_x(2,3),neigh_y(2,3),nmax,i0                 !!!
 REAL(KIND=8):: r(2,2)                                                        !!!
+CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+filename='6'                                                                 !!!
+i0=2                                                                         !!!
 nf=1                                                                         !!!
 nface(1)=6                                                                   !!!
 nmax=6                                                                       !!!
-v_in_f(1,1)=1 ; x_in_f(1,1)=0  ; y_in_f(1,1)=0                               !!!
-v_in_f(1,2)=2 ; x_in_f(1,2)=0  ; y_in_f(1,2)=1                               !!!
-v_in_f(1,3)=1 ; x_in_f(1,3)=-1 ; y_in_f(1,3)=0                               !!!
-v_in_f(1,4)=2 ; x_in_f(1,4)=0  ; y_in_f(1,4)=0                               !!!
-v_in_f(1,5)=1 ; x_in_f(1,5)=0  ; y_in_f(1,5)=-1                              !!!
-v_in_f(1,6)=2 ; x_in_f(1,6)=1  ; y_in_f(1,6)=0                               !!!
+v_in_f(1,:)= (/1,2,1,2,1,2/)                                                 !!!
+x_in_f(1,:)= (/0,0,-1,0,0,1/)                                                !!!
+y_in_f(1,:)= (/0,1,0,0,-1,0/)                                                !!!
 nv=2                                                                         !!!
 CALL nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y)!!
 r(1,:)=0.37D0                                                                !!!

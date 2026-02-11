@@ -288,12 +288,13 @@ END SUBROUTINE same_local                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed)
+SUBROUTINE flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed,m11,m22)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nmaps       !!!
 INTEGER:: nface(nf),nf,nflags                                                !!!
 INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:),m2(:,:),m1(:,:)               !!!
+INTEGER,ALLOCATABLE,INTENT(OUT),OPTIONAL:: m11(:,:),m22(:,:)                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! First Neighbors                                                            !!!
 CALL first_neighbors(nflags,neigh_flag,m2)                                   !!!
@@ -302,6 +303,14 @@ CALL second_neighbors(nflags,flag,m2,m1,flag_color)                          !!!
 ! Creating the maps (allocations inside)                                     !!!
 CALL creating_maps(nflags,flag,neigh_flag,nf,nface,nmaps,maps)               !!!
 CALL get_nfixed(nflags,m1,m2,nmaps,maps,maps_nfixed)                         !!!
+IF(PRESENT(m11))THEN                                                         !!!
+  ALLOCATE(m11(nflags,nflags))                                               !!!
+  m11=m1                                                                     !!!
+END IF                                                                       !!!
+IF(PRESENT(m22))THEN                                                         !!!
+  ALLOCATE(m22(nflags,nflags))                                               !!!
+  m22=m2                                                                     !!!
+END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE flg2map                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

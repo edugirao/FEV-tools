@@ -32,10 +32,8 @@ CALL read_anc_list(nf,filename_target,filename_list,i0)                      !!!
 ! Taking care of graphene if the first in the ancestor list                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IF(i0.eq.1)THEN                                                              !!!
-  filename_list(1)='6'                                                       !!!
-  CALL write_graphene                                                        !!!
-  CALL make_graphene                                                         !!!
-  i0=2                                                                       !!!
+  CALL write_graphene(1,1,1,1,1,0)                                           !!!
+  CALL make_graphene(i0,filename_list(1))                                    !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating strucuture(s) from ancestor list                                  !!!

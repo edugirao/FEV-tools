@@ -297,141 +297,110 @@ END SUBROUTINE write_mir                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_graphene                                                    !!!
+SUBROUTINE write_graphene(fev,flg,fcs,nxy,xyz,gen)                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: u                                                                  !!!
+INTEGER:: u,fev,flg,fcs,nxy,xyz,gen                                          !!!
 LOGICAL:: tru,fal                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 tru=.true.                                                                   !!!
 fal=.false.                                                                  !!!
-OPEN(NEWUNIT=u,FILE='6.fev')                                                 !!!
-WRITE(u,*) '1    3    2'                                                     !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.flg')                                                 !!!
-WRITE(u,*) '12    1    3    2'                                               !!!
-WRITE(u,*) '6'                                                               !!!
-WRITE(u,*) '1      1      1      2      6      8      1'                     !!!
-WRITE(u,*) '1      1      1      1      3      7     -1'                     !!!
-WRITE(u,*) '1      2      1      4      2     10      1'                     !!!
-WRITE(u,*) '1      2      1      3      5      9     -1'                     !!!
-WRITE(u,*) '1      3      1      6      4     12      1'                     !!!
-WRITE(u,*) '1      3      1      5      1     11     -1'                     !!!
-WRITE(u,*) '1      1      2      8     12      2      1'                     !!!
-WRITE(u,*) '1      1      2      7      9      1     -1'                     !!!
-WRITE(u,*) '1      2      2     10      8      4      1'                     !!!
-WRITE(u,*) '1      2      2      9     11      3     -1'                     !!!
-WRITE(u,*) '1      3      2     12     10      6      1'                     !!!
-WRITE(u,*) '1      3      2     11      7      5     -1'                     !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.fcs')                                                 !!!
-WRITE(u,*) '1    3    2    6'                                                !!!
-WRITE(u,*) '6  T'                                                            !!!
-WRITE(u,*) '1      1      1      1      1      1'                            !!!
-WRITE(u,*) '1      2      3      1      2      3'                            !!!
-WRITE(u,*) '1      2      1      2      1      2'                            !!!
-WRITE(u,*) 'T      T      T      T      T      T'                            !!!
-WRITE(u,*) 'T      F      F      F      F      F'                            !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.b.fcs',FORM='UNFORMATTED')                            !!!
-WRITE(u) 1,3,2,6                                                             !!!
-WRITE(u) 6,tru                                                               !!!
-WRITE(u) 1,1,1,1,1,1                                                         !!!
-WRITE(u) 1,2,3,1,2,3                                                         !!!
-WRITE(u) 1,2,1,2,1,2                                                         !!!
-WRITE(u) tru,tru,tru,tru,tru,tru                                             !!!
-WRITE(u) tru,fal,fal,fal,fal,fal                                             !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.nxy')                                                 !!!
-WRITE(u,*) '6'                                                               !!!
-WRITE(u,*) '0      0     -1      0      0      1'                            !!!
-WRITE(u,*) '0      1      0      0     -1      0'                            !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.xyz')                                                 !!!
-WRITE(u,*) '2'                                                               !!!
-WRITE(u,*)                                                                   !!!
-WRITE(u,*) 'C  0.37  0.37  0.00'                                             !!!
-WRITE(u,*) 'C  0.67  0.67  0.00'                                             !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
+IF(fev.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='6.fev')                                               !!!
+  WRITE(u,*) '1    3    2'                                                   !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*) '1'                                                             !!!
+  WRITE(u,*)                                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!
+END IF                                                                       !!!
+IF(flg.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='6.flg')                                               !!!
+  WRITE(u,*) '12    1    3    2'                                             !!!
+  WRITE(u,*) '6'                                                             !!!
+  WRITE(u,*) '1      1      1      2      6      8      1'                   !!!
+  WRITE(u,*) '1      1      1      1      3      7     -1'                   !!!
+  WRITE(u,*) '1      2      1      4      2     10      1'                   !!!
+  WRITE(u,*) '1      2      1      3      5      9     -1'                   !!!
+  WRITE(u,*) '1      3      1      6      4     12      1'                   !!!
+  WRITE(u,*) '1      3      1      5      1     11     -1'                   !!!
+  WRITE(u,*) '1      1      2      8     12      2      1'                   !!!
+  WRITE(u,*) '1      1      2      7      9      1     -1'                   !!!
+  WRITE(u,*) '1      2      2     10      8      4      1'                   !!!
+  WRITE(u,*) '1      2      2      9     11      3     -1'                   !!!
+  WRITE(u,*) '1      3      2     12     10      6      1'                   !!!
+  WRITE(u,*) '1      3      2     11      7      5     -1'                   !!!
+  WRITE(u,*)                                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!
+  OPEN(NEWUNIT=u,FILE='6.b.flg',FORM='UNFORMATTED')                          !!!
+  WRITE(u) 12,1,3,2                                                          !!!
+  WRITE(u) 6                                                                 !!!
+  WRITE(u) 1,1,1, 2, 6, 8, 1                                                 !!!
+  WRITE(u) 1,1,1, 1, 3, 7,-1                                                 !!!
+  WRITE(u) 1,2,1, 4, 2,10, 1                                                 !!!
+  WRITE(u) 1,2,1, 3, 5, 9,-1                                                 !!!
+  WRITE(u) 1,3,1, 6, 4,12, 1                                                 !!!
+  WRITE(u) 1,3,1, 5, 1,11,-1                                                 !!!
+  WRITE(u) 1,1,2, 8,12, 2, 1                                                 !!!
+  WRITE(u) 1,1,2, 7, 9, 1,-1                                                 !!!
+  WRITE(u) 1,2,2,10, 8, 4, 1                                                 !!!
+  WRITE(u) 1,2,2, 9,11, 3,-1                                                 !!!
+  WRITE(u) 1,3,2,12,10, 6, 1                                                 !!!
+  WRITE(u) 1,3,2,11, 7, 5,-1                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!  
+END IF                                                                       !!!
+IF(fcs.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='6.fcs')                                               !!!
+  WRITE(u,*) '1    3    2    6'                                              !!!
+  WRITE(u,*) '6  T'                                                          !!!
+  WRITE(u,*) '1      1      1      1      1      1'                          !!!
+  WRITE(u,*) '1      2      3      1      2      3'                          !!!
+  WRITE(u,*) '1      2      1      2      1      2'                          !!!
+  WRITE(u,*) 'T      T      T      T      T      T'                          !!!
+  WRITE(u,*) 'T      F      F      F      F      F'                          !!!
+  WRITE(u,*)                                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!
+  OPEN(NEWUNIT=u,FILE='6.b.fcs',FORM='UNFORMATTED')                          !!!
+  WRITE(u) 1,3,2,6                                                           !!!
+  WRITE(u) 6,tru                                                             !!!
+  WRITE(u) 1,1,1,1,1,1                                                       !!!
+  WRITE(u) 1,2,3,1,2,3                                                       !!!
+  WRITE(u) 1,2,1,2,1,2                                                       !!!
+  WRITE(u) tru,tru,tru,tru,tru,tru                                           !!!
+  WRITE(u) tru,fal,fal,fal,fal,fal                                           !!!
+  CLOSE(UNIT=u)                                                              !!!
+END IF                                                                       !!!
+IF(nxy.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='6.nxy')                                               !!!
+  WRITE(u,*) '6'                                                             !!!
+  WRITE(u,*) '0      0     -1      0      0      1'                          !!!
+  WRITE(u,*) '0      1      0      0     -1      0'                          !!!
+  WRITE(u,*)                                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!
+END IF                                                                       !!!
+IF(xyz.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='6.xyz')                                               !!!
+  WRITE(u,*) '2'                                                             !!!
+  WRITE(u,*)                                                                 !!!
+  WRITE(u,*) 'C  0.37  0.37  0.00'                                           !!!
+  WRITE(u,*) 'C  0.67  0.67  0.00'                                           !!!
+  WRITE(u,*)                                                                 !!!
+  CLOSE(UNIT=u)                                                              !!!
+END IF                                                                       !!!
+IF(gen.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE='gensize1')                                            !!!
+  WRITE(u,*) 1                                                               !!!
+  CLOSE(UNIT=u)                                                              !!!
+  OPEN(NEWUNIT=u,FILE='gensystems1')                                         !!!
+  WRITE(u,*) 6,1,1,0                                                         !!!
+  CLOSE(UNIT=u)                                                              !!!
+  STOP                                                                       !!!
+END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_graphene                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_gen1                                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-LOGICAL:: tru,fal                                                            !!!
-INTEGER:: u                                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-tru=.true.                                                                   !!!
-fal=.false.                                                                  !!!
-OPEN(NEWUNIT=u,FILE='6.fev')                                                 !!!
-WRITE(u,*) '1    3    2'                                                     !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*) '1'                                                               !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.flg')                                                 !!!
-WRITE(u,*) '12    1    3    2'                                               !!!
-WRITE(u,*) '6'                                                               !!!
-WRITE(u,*) '1      1      1      2      6      8      1'                     !!!
-WRITE(u,*) '1      1      1      1      3      7     -1'                     !!!
-WRITE(u,*) '1      2      1      4      2     10      1'                     !!!
-WRITE(u,*) '1      2      1      3      5      9     -1'                     !!!
-WRITE(u,*) '1      3      1      6      4     12      1'                     !!!
-WRITE(u,*) '1      3      1      5      1     11     -1'                     !!!
-WRITE(u,*) '1      1      2      8     12      2      1'                     !!!
-WRITE(u,*) '1      1      2      7      9      1     -1'                     !!!
-WRITE(u,*) '1      2      2     10      8      4      1'                     !!!
-WRITE(u,*) '1      2      2      9     11      3     -1'                     !!!
-WRITE(u,*) '1      3      2     12     10      6      1'                     !!!
-WRITE(u,*) '1      3      2     11      7      5     -1'                     !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.fcs')                                                 !!!
-WRITE(u,*) '1    3    2    6'                                                !!!
-WRITE(u,*) '6  T'                                                            !!!
-WRITE(u,*) '1      1      1      1      1      1'                            !!!
-WRITE(u,*) '1      2      3      1      2      3'                            !!!
-WRITE(u,*) '1      2      1      2      1      2'                            !!!
-WRITE(u,*) 'T      T      T      T      T      T'                            !!!
-WRITE(u,*) 'T      F      F      F      F      F'                            !!!
-WRITE(u,*)                                                                   !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='6.b.fcs',FORM='UNFORMATTED')                            !!!
-WRITE(u) 1,3,2,6                                                             !!!
-WRITE(u) 6,tru                                                               !!!
-WRITE(u) 1,1,1,1,1,1                                                         !!!
-WRITE(u) 1,2,3,1,2,3                                                         !!!
-WRITE(u) 1,2,1,2,1,2                                                         !!!
-WRITE(u) tru,tru,tru,tru,tru,tru                                             !!!
-WRITE(u) tru,fal,fal,fal,fal,fal                                             !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='gensize1')                                              !!!
-WRITE(u,*) 1                                                                 !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE='gensystems1')                                           !!!
-WRITE(u,*) 6,1,1,0                                                           !!!
-CLOSE(UNIT=u)                                                                !!!
-STOP                                                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE make_gen1                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
