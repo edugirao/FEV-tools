@@ -2,7 +2,7 @@
 MODULE tools_coor                                                            !!!
 IMPLICIT NONE                                                                !!!
 PRIVATE                                                                      !!!
-PUBLIC:: make_a_xyz,make_graphene                                            !!!
+PUBLIC:: make_graphene,add_a_dimer,xyz_optimization                          !!!
 CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE get_real_face(nface,rf,nf,nv,nmax,rp,f,v_in_f,x_in_f,y_in_f)      !!!
@@ -337,40 +337,22 @@ END SUBROUTINE f12_nxy                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE make_a_xyz(filename_k,filename_p,f0,ie1,ie2,nv1,rk,nf1,nface1,x_in_f1,y_in_f1)
+SUBROUTINE add_a_dimer(f0,ie1,ie2,rp, &                                      !!!
+       & nf0,nv0,nmax0,nface0,f_in_f0,e_in_f0,v_in_f0,x_in_f0,y_in_f0, &     !!!
+       & nf1,nv1,nmax1,nface1,x_in_f1,y_in_f1,rk)                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-USE tools_read                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nf0,ne0,nv0,nf1,ne1,nv1,ie1,ie2                                !!!
+INTEGER:: i,j,nf0,nv0,nf1,nv1,ie1,ie2                                        !!!
 INTEGER:: f0,f1,f2,f3,e1,e2,v1,v2,v3,v4,v5,v6,i1,i2                          !!!
 INTEGER:: nmax0,nmax1                                                        !!!
 INTEGER:: iv5x,iv5y,iv6x,iv6y                                                !!!
-INTEGER,ALLOCATABLE:: nface0(:)                                              !!!
-INTEGER,ALLOCATABLE:: f_in_f0(:,:),e_in_f0(:,:),v_in_f0(:,:)                 !!!
-INTEGER,ALLOCATABLE:: x_in_f0(:,:),y_in_f0(:,:)                              !!!
-INTEGER,ALLOCATABLE:: nface1(:)                                              !!!
-INTEGER,ALLOCATABLE:: f_in_f1(:,:),e_in_f1(:,:),v_in_f1(:,:)                 !!!
+INTEGER:: nface0(nf0)                                                        !!!
+INTEGER:: f_in_f0(nf0,nmax0),e_in_f0(nf0,nmax0),v_in_f0(nf0,nmax0)           !!!
+INTEGER:: x_in_f0(nf0,nmax0),y_in_f0(nf0,nmax0)                              !!!
+INTEGER:: nface1(nf1)                                                        !!!
 INTEGER,ALLOCATABLE:: x_in_f1(:,:),y_in_f1(:,:)                              !!!
-CHARACTER*100:: filename_p,filename_k                                        !!!
-REAL(KIND=8),ALLOCATABLE:: rp(:,:),rk(:,:),rf(:,:)                           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading parent .fcs (allocations in read_fcs_only_fev_in_f)                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fcs_only_fev_in_f(nf0,ne0,nv0,nmax0,nface0,f_in_f0,e_in_f0,v_in_f0,filename_p)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading child .fcs (allocations in read_fcs_only_fev_in_f)                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fcs_only_fev_in_f(nf1,ne1,nv1,nmax1,nface1,f_in_f1,e_in_f1,v_in_f1,filename_k)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading parent .nxy                                                        !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(x_in_f0(nf0,nmax0),y_in_f0(nf0,nmax0))                              !!!
-CALL read_nxy(nf0,nmax0,nface0,x_in_f0,y_in_f0,filename_p)                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading parent structure                                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(rp(nv0,2))                                                          !!!
-CALL read_xydata(nv0,rp,filename_p)                                          !!!
+REAL(KIND=8):: rp(nv0,2)                                                     !!!
+REAL(KIND=8),ALLOCATABLE:: rk(:,:),rf(:,:)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Adding dimer info                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -402,7 +384,7 @@ v6=nv0+2                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating child .nxy data                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(x_in_f1(nf0+1,nmax0+3),y_in_f1(nf0+1,nmax0+3))                      !!!
+ALLOCATE(x_in_f1(nf1,nmax1),y_in_f1(nf1,nmax1))                              !!!
 x_in_f1=0                                                                    !!!
 y_in_f1=0                                                                    !!!
 ! Copying unchanged parent faces                                             !!!
@@ -443,7 +425,7 @@ CALL f3_nxy(f3,f0,ie1,ie2,nface0(f0),nmax0,nf0,rf,e1,e2,e_in_f0,x_in_f0,y_in_f0,
 ! Creating child structure                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Allocating child structure                                                 !!!
-ALLOCATE(rk(nv0+2,2))                                                        !!!
+ALLOCATE(rk(nv1,2))                                                          !!!
 ! Copying parent structure                                                   !!!
 rk(1:nv0,:)=rp                                                               !!!
 ! Creating new vertices                                                      !!!
@@ -473,11 +455,7 @@ IF(iv5y.ne.0) rk(v5,2)=rk(v5,2)-iv5y*1.0D0                                   !!!
 IF(iv6x.ne.0) rk(v6,1)=rk(v6,1)-iv6x*1.0D0                                   !!!
 IF(iv6y.ne.0) rk(v6,2)=rk(v6,2)-iv6y*1.0D0                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Optimizing child structure                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL xyz_optimization(nf1,nv1,nmax1,nface1,v_in_f1,x_in_f1,y_in_f1,rk,filename_k)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE make_a_xyz                                                    !!!
+END SUBROUTINE add_a_dimer                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
