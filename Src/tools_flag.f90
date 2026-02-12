@@ -177,5 +177,95 @@ END SUBROUTINE nfaces_from_flg                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE flg_pri_reduc(filename,nf,ne,nv,nflags,flag,ntramaps,tmaps,nf2,ne2,nv2)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Routine to apply the FE, FV, and EV sum rules.                             !!!
+! Also gets number of sides of each face.                                    !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: nf,ne,nv,nflags,flag(nflags,3),ntramaps,tmaps(ntramaps,nflags)     !!!
+INTEGER:: nf2,ne2,nv2,f2f(nf),e2e(ne),v2v(nv),face(nf),edge(ne),vertex(nv)   !!!
+INTEGER:: nflags2,fi,ei,vi,i,j,l   !!!
+CHARACTER(LEN=*)::filename                                                   !!!
+LOGICAL:: ok_f(nf),ok_e(ne),ok_v(nv)                                         !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! New sizes                                                                  !!!
+nflags2=nflags/(ntramaps+1)                                                  !!!
+nf2=nf/(ntramaps+1)                                                          !!!
+ne2=ne/(ntramaps+1)                                                          !!!
+nv2=nv/(ntramaps+1)                                                          !!!
+IF(ntramaps.eq.0)THEN                                                        !!!
+  WRITE(*,'(A)') 'Structure in the '//TRIM(ADJUSTL(filename))// &            !!!
+                        & '.flg or .b.flg file is already a primitive cell.' !!!
+ELSE                                                                         !!!
+  WRITE(*,'(A)') 'Structure in the '//TRIM(ADJUSTL(filename))// &            !!!
+                        & '.flg or .b.flg file is a conventional cell.'      !!!
+END IF                                                                       !!!
+! ok indicates if the element has been marked already                        !!!
+ok_f=.false.                                                                 !!!
+ok_e=.false.                                                                 !!!
+ok_v=.false.                                                                 !!!
+fi=0                                                                         !!!
+ei=0                                                                         !!!
+vi=0                                                                         !!!
+f2f=0                                                                        !!!
+e2e=0                                                                        !!!
+v2v=0                                                                        !!!
+DO i=1,nflags                                                                !!!
+  ! If face not marked yet                                                   !!!
+  IF(.not.ok_f(flag(i,1)))THEN                                               !!!
+    fi=fi+1                                                                  !!!
+    ! Get the list of equivalent faces                                       !!!
+    l=1                                                                      !!!
+    face(l)=flag(i,1)                                                        !!!
+    DO j=1,ntramaps                                                          !!!
+      l=l+1                                                                  !!!
+      face(l)=flag(tmaps(j,i),1)                                             !!!
+    END DO                                                                   !!!
+    ! Set these faces as marked                                              !!!
+    ok_f(face(1:l))=.true.                                                   !!!
+    ! Map them all to fi                                                     !!!
+    f2f(face(1:l))=fi                                                        !!!
+  END IF                                                                     !!!
+  ! If edge not marked yet                                                   !!!
+  IF(.not.ok_e(flag(i,2)))THEN                                               !!!
+    ei=ei+1                                                                  !!!
+    ! Get the list of equivalent edges                                       !!!
+    l=1                                                                      !!!
+    edge(l)=flag(i,2)                                                        !!!
+    DO j=1,ntramaps                                                          !!!
+      l=l+1                                                                  !!!
+      edge(l)=flag(tmaps(j,i),2)                                             !!!
+    END DO                                                                   !!!
+    ! Set these edges as marked                                              !!!
+    ok_e(edge(1:l))=.true.                                                   !!!
+    ! Map them all to ei                                                     !!!
+    e2e(edge(1:l))=ei                                                        !!!
+  END IF                                                                     !!!
+  ! If vertex not marked yet                                                 !!!
+  IF(.not.ok_v(flag(i,3)))THEN                                               !!!
+    vi=vi+1                                                                  !!!
+    ! Get the list of equivalent vertices                                    !!!
+    l=1                                                                      !!!
+    vertex(l)=flag(i,3)                                                      !!!
+    DO j=1,ntramaps                                                          !!!
+      l=l+1                                                                  !!!
+      vertex(l)=flag(tmaps(j,i),3)                                           !!!
+    END DO                                                                   !!!
+    ! Set these vertices as marked                                           !!!
+    ok_v(vertex(1:l))=.true.                                                 !!!
+    ! Map them all to vi                                                     !!!
+    v2v(vertex(1:l))=vi                                                      !!!
+  END IF                                                                     !!!
+END DO                                                                       !!!
+! Relabelling flags                                                          !!!
+flag(:,1)=f2f(flag(:,1))                                                     !!!
+flag(:,2)=e2e(flag(:,2))                                                     !!!
+flag(:,3)=v2v(flag(:,3))                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE flg_pri_reduc                                                 !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE tools_flag                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -10,18 +10,23 @@ USE tools_read                                                               !!!
 USE tools_writ                                                               !!!
 USE tools_conv                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,nflags,ntramaps,ne,nv,nf2,ne2,nv2,nmaps                         !!!
+INTEGER:: nf,nflags,ntramaps,ne,nv,nf2,ne2,nv2,nmaps,nmax                    !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),fev(:,:,:),maps(:,:),maps_nfixed(:) !!!
 INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:),tmaps(:,:)               !!!
+INTEGER,ALLOCATABLE:: e_in_f(:,:),v_in_f(:,:)                                !!!
 CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading the flag graph from a .flg or a .b.flg file                        !!!
+! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
+CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Create flg from fcs (allocations inside fcs_to_flg)                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL fcs_to_flg(nf,nmax,nface,e_in_f,v_in_f,nflags,flag,neigh_flag,flag_color)!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

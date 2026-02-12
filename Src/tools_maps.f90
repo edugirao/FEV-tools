@@ -373,5 +373,38 @@ END SUBROUTINE second_neighbors                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE get_tramaps(nmaps,nflags,maps,maps_nfixed,flag_color,ntramaps,tmaps)!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: nmaps,nflags,maps(nmaps,nflags),maps_nfixed(nmaps)                 !!!
+INTEGER:: flag_color(nflags),ntramaps,tmpsize,n                              !!!
+INTEGER,ALLOCATABLE:: tmaps(:,:),tmaps2(:,:)                                 !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Selecting only translation maps                                            !!!
+tmpsize=1                                                                    !!!
+ALLOCATE(tmaps(tmpsize,nflags))                                              !!!
+ntramaps=0                                                                   !!!
+DO n=1,nmaps                                                                 !!!
+  IF(maps_nfixed(n).eq.0)THEN                                                !!!
+    IF(flag_color(1)*flag_color(maps(n,1)).eq.1)THEN                         !!!
+      ntramaps=ntramaps+1                                                    !!!
+      IF(ntramaps.gt.tmpsize)THEN                                            !!!
+        ALLOCATE(tmaps2(2*tmpsize,nflags))                                   !!!
+        tmaps2(1:tmpsize,:)=tmaps                                            !!!
+        CALL MOVE_ALLOC(tmaps2,tmaps)                                        !!!
+        tmpsize=2*tmpsize                                                    !!!
+      END IF                                                                 !!!
+      tmaps(ntramaps,:)=maps(n,:)                                            !!!
+    END IF                                                                   !!!
+  END IF                                                                     !!!
+END DO                                                                       !!!
+ALLOCATE(tmaps2(ntramaps,nflags))                                            !!!
+tmaps2=tmaps(1:ntramaps,:)                                                   !!!
+CALL MOVE_ALLOC(tmaps2,tmaps)                                                !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE get_tramaps                                                   !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE tools_maps                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

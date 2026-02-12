@@ -1,5 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM flg2sym                                                              !!!
+PROGRAM fcs2sym                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Tool to determine the Wallpaper-Symmetry-Group of a structure from its     !!! 
 ! Faces-Info data within a .fcs or a .b.fcs file.                            !!!
@@ -67,5 +67,5 @@ OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.sym')                            !!!
 WRITE(1,'(A)') group                                                         !!!
 CLOSE(UNIT=1)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM flg2sym                                                          !!!
+END PROGRAM fcs2sym                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
