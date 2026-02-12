@@ -496,5 +496,25 @@ END SUBROUTINE write_sum_rules                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE write_symbol(filename,string)                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: u                                                                  !!!
+CHARACTER*100:: filename                                                     !!!
+CHARACTER*4000:: string(3)                                                   !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.smb')                         !!!
+WRITE(u,'(A)') '!*********** System Polygonal Symbol ************!'          !!!
+WRITE(u,'(A)') TRIM(ADJUSTL(string(1)))                                      !!!
+WRITE(u,'(A)') '!*** System Polygonal Symbol (semi-extended) ****!'          !!!
+WRITE(u,'(A)') TRIM(ADJUSTL(string(2)))                                      !!!
+WRITE(u,'(A)') '!*** System Polygonal Symbol (full-extended) ****!'          !!!
+WRITE(u,'(A)') TRIM(ADJUSTL(string(3)))                                      !!!
+CLOSE(UNIT=u)                                                                !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE write_symbol                                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE tools_writ                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
