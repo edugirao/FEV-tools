@@ -1,6 +1,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PROGRAM fcs2smb                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Tool for Faces-Info to Polygonal-Symbol conversion.                        !!!
+! Outputs .tex and .pdf files for the symbols from a .fcs or a .b.fcs file.  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_read                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,nf,npol(3:100)                                                   !!!

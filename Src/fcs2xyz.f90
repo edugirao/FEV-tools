@@ -1,6 +1,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PROGRAM fcs2xyz                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Tool for Faces-Info to Fractional-Atomic-Coordinates conversion.           !!!
+! Converts a .fcs or a .b.fcs file to .xyz and .pdf formats.                 !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_coor                                                               !!!
 USE tools_read                                                               !!!
 USE tools_writ                                                               !!!

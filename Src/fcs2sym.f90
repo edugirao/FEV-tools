@@ -2,17 +2,19 @@
 PROGRAM flg2sym                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Tool to determine the Wallpaper-Symmetry-Group of a structure from its     !!! 
-! Flag-Graph within a .flg or a .b.flg file.                                 !!!
+! Faces-Info data within a .fcs or a .b.fcs file.                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_maps                                                               !!!
 USE tools_read                                                               !!!
 USE tools_symm                                                               !!!
 USE tools_writ                                                               !!!
+USE tools_conv                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,ne,nv,nflags,nrotmaps,nmirmaps,nglimaps,ntramaps                !!!
-INTEGER:: mirror_count,nmaps,nrot,nmir                                       !!!
+INTEGER:: mirror_count,nmaps,nrot,nmir,nmax                                  !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),m2(:,:),m1(:,:)                     !!!
 INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:)                          !!!
+INTEGER,ALLOCATABLE:: e_in_f(:,:),v_in_f(:,:)                                !!!
 INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
 INTEGER,ALLOCATABLE:: rot_i(:),rot_n(:),mir_i(:),mir_m(:)                    !!!
 CHARACTER*1,ALLOCATABLE:: rot_e(:),mir_e(:)                                  !!!
@@ -24,9 +26,13 @@ LOGICAL:: nocross                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading the flag graph from a .flg or a .b.flg file                        !!!
+! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
+CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Create flg from fcs (allocations inside fcs_to_flg)                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CALL fcs_to_flg(nf,nmax,nface,e_in_f,v_in_f,nflags,flag,neigh_flag,flag_color)!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
