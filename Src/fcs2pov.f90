@@ -1,14 +1,16 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM fev2pov                                                              !!!
+PROGRAM fcs2pov                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Tool for Embedding-Tensor to PovRay illistration of the cuboid structure.  !!!
 ! Converts a .fev file to the .pov and .png file formats.                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_read                                                               !!!
+USE tools_conv                                                               !!!
 USE tools_povr                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: u,nf,ne,nv,i,j,l,ivrot(3)                                          !!!
+INTEGER:: u,nf,ne,nv,i,j,l,ivrot(3),nmax                                     !!!
 INTEGER,ALLOCATABLE:: fev(:,:,:)                                             !!!
+INTEGER,ALLOCATABLE:: nface(:),e_in_f(:,:),v_in_f(:,:)                       !!!
 REAL(KIND=8):: vloc(3),v_at(3),v_up(3),v_rg(3),vl(4,3)                       !!!
 REAL(KIND=8):: r(3),delta,blue(4),red(4),v(3)                                !!!
 CHARACTER*100:: filename                                                     !!!
@@ -18,9 +20,13 @@ CHARACTER*20::pov_command                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading embedding tensor from .fev file (allocations inside)               !!!
+! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
+CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Create fev from fcs (allocations inside fcs_to_fev)                        !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!          
+CALL fcs_to_fev(nf,ne,nv,nmax,nface,e_in_f,v_in_f,fev)                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.pov')                         !!!
 vloc(1)=10+0.5*nf ; vloc(2)=10+0.5*nv ; vloc(3)=10+0.5*ne                    !!!
@@ -96,5 +102,5 @@ CLOSE(UNIT=u)                                                                !!!
 pov_command='povray +W1000 +H1000'                                           !!!
 CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'.pov')               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM fev2pov                                                          !!!
+END PROGRAM fcs2pov                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
