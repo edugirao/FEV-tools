@@ -10,5 +10,5 @@
 - Fix of makefile issues from v1.0.0.
 - Fix of a bug in flg2fcs (it used to crash when a previous .map file didn't exist).
 - Modifications in flg and fcs starting tools to make them accept both formatted and unformatted input files.
-- Inclusion of flg2sum, fcs2sum, flg2smb, fcs2sym, fcs2pri, and fcs2iso tools.
+- Inclusion of flg2sum, fcs2sum, flg2pov, fcs2pov, flg2smb, fcs2sym, fcs2pri, and fcs2iso tools.
 
