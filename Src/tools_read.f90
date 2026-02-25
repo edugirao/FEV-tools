@@ -773,7 +773,7 @@ filename_list(nf)=filename_target                                            !!!
 i0=2                                                                         !!!
 DO i=nf,2,-1                                                                 !!!
   OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename_list(i)))//'.anc',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-  READ(u,*,IOSTAT=ios) filename_list(i-1)                                               !!!
+  READ(u,*,IOSTAT=ios) filename_list(i-1)                                    !!!
   CLOSE(UNIT=u)                                                              !!!
   INQUIRE(FILE=TRIM(ADJUSTL(filename_list(i-1)))//'.xyz',EXIST=have_file)    !!!
   IF(have_file)THEN                                                          !!!

@@ -1,8 +1,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 PROGRAM flg2smb                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Tool for Faces-Info to Polygonal-Symbol conversion.                        !!!
-! Outputs .tex and .pdf files for the symbols from a .fcs or a .b.fcs file.  !!!
+! Tool for Flag-Graph to Polygonal-Symbol conversion.                        !!!
+! Outputs .tex and .pdf files for the symbols from a .flg or a .b.flg file.  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_read                                                               !!!
 USE tools_symb                                                               !!!
@@ -10,11 +10,11 @@ USE tools_writ                                                               !!!
 USE tools_conv                                                               !!!
 USE tools_maps                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,ne,nv,nflags,nmaps,npol(3:100),nmax                                                !!!
+INTEGER:: nf,ne,nv,nflags,nmaps,npol(3:100),nmax                             !!!
 INTEGER,ALLOCATABLE:: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:),nface(:)           !!!
-INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)           !!!
-INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)           !!!
-LOGICAL,ALLOCATABLE:: b_in_f(:,:)           !!!
+INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
+INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
+LOGICAL,ALLOCATABLE:: b_in_f(:,:)                                            !!!
 CHARACTER*1:: syst                                                           !!!
 CHARACTER*4:: group                                                          !!!
 CHARACTER*100:: filename                                                     !!!

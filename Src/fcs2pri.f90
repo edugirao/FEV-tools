@@ -1,8 +1,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-PROGRAM flg2pri                                                              !!!
+PROGRAM fcs2pri                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Tool for extract the primitive cell of a structure from its Flag-Graph     !!!
-! within a .flg or a .b.flg file format. Writes a primitive cell .fev file.  !!!
+! Tool to extract the primitive cell of a structure from its Faces-Info data !!!
+! within a .fcs or a .b.fcs file format. Writes a primitive cell .fev file.  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_maps                                                               !!!
 USE tools_flag                                                               !!!
@@ -44,11 +44,11 @@ CALL flg_pri_reduc(filename,nf,ne,nv,nflags,flag,ntramaps,tmaps,nf2,ne2,nv2) !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL flg_to_fev(nflags,flag,nf2,ne2,nv2,fev)                                 !!!
 ! Writing primitive FEV tensor                                               !!!
-CALL write_fev(nf2,ne2,nv2,fev,TRIM(ADJUSTL(filename))//'primitive')                                     !!!
+CALL write_fev(nf2,ne2,nv2,fev,TRIM(ADJUSTL(filename))//'primitive')         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Deallocations                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DEALLOCATE(flag)                                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END PROGRAM flg2pri                                                          !!!
+END PROGRAM fcs2pri                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
