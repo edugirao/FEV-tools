@@ -3,7 +3,7 @@
 ## v1.0.0 (29/Jan/2026)
 - First release.
 
-## v1.x.x (in development)
+## v1.0.1 (01/Mar/2026)
 - Internal changes in many subroutines, and their organization in modules.
 - Deletion of unused routines.
 - Addition of several internal security checks (mostly in I/O).
@@ -11,4 +11,7 @@
 - Fix of a bug in flg2fcs (it used to crash when a previous .map file didn't exist).
 - Modifications in flg and fcs starting tools to make them accept both formatted and unformatted input files.
 - Inclusion of flg2sum, fcs2sum, flg2pov, fcs2pov, flg2smb, fcs2sym, fcs2pri, and fcs2iso tools.
-
+- In principle, this should be version 1.1, but it ended up being launched as a development intermediate for the actual version 1.1.
+  
+## v1.x.x (in development)
+- 
