@@ -14,4 +14,6 @@
 - In principle, this should be version 1.1, but it ended up being launched as a development intermediate for the actual version 1.1.
   
 ## v1.x.x (in development)
-- 
+- Both flg2pri and fcs2pri tools were merged into flg2pri, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
+- Both flg2sym and fcs2sym tools were merged into flg2sym, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
+- Both flg2iso and fcs2iso tools were merged into flg2iso, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
