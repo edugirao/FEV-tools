@@ -18,3 +18,6 @@
 - Both flg2sym and fcs2sym tools were merged into flg2sym, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both flg2iso and fcs2iso tools were merged into flg2iso, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both fcs2smb and flg2smb tools were merged into fcs2smb, which now looks first for the faces-info files and then, in their absence, looks for flag-graph files.
+- The fev2sum, fcs2sum, and flg2sum tools were merged into fev2sum, which now looks first for the embedding-tensor file, in its absence looks for flag-graph files, and then, in their absence, looks for faces-info files.
+- The fev2pov, fcs2pov, and flg2pov tools were merged into fev2pov, which now looks first for the embedding-tensor file, in its absence looks for flag-graph files, and then, in their absence, looks for faces-info files.
+- The fev2pov tool also produces individual .pov files for each "face-slice" of the embedding-tensor.
