@@ -17,3 +17,4 @@
 - Both flg2pri and fcs2pri tools were merged into flg2pri, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both flg2sym and fcs2sym tools were merged into flg2sym, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both flg2iso and fcs2iso tools were merged into flg2iso, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
+- Both fcs2smb and flg2smb tools were merged into fcs2smb, which now looks first for the faces-info files and then, in their absence, looks for flag-graph files.
