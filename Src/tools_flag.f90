@@ -179,23 +179,25 @@ END SUBROUTINE nfaces_from_flg                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE flg_pri_reduc(filename,nf,ne,nv,nflags,flag,ntramaps,tmaps,nf2,ne2,nv2)
+SUBROUTINE flg_to_pri(filename,nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,ntramaps,tmaps)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Routine to apply the FE, FV, and EV sum rules.                             !!!
 ! Also gets number of sides of each face.                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,ne,nv,nflags,flag(nflags,3),ntramaps,tmaps(ntramaps,nflags)     !!!
-INTEGER:: nf2,ne2,nv2,f2f(nf),e2e(ne),v2v(nv),face(nf),edge(ne),vertex(nv)   !!!
-INTEGER:: nflags2,fi,ei,vi,i,j,l   !!!
+INTEGER,ALLOCATABLE,INTENT(INOUT):: nface(:),flag(:,:),neigh_flag(:,:),flag_color(:)
+INTEGER,ALLOCATABLE:: nface2(:),flag2(:,:),neigh_flag2(:,:),flag_color2(:)
+INTEGER:: nf,ne,nv,nflags,ntramaps,tmaps(ntramaps,nflags)     !!!
+INTEGER:: f2f(nf),e2e(ne),v2v(nv),face(nf),edge(ne),vertex(nv)   !!!
+INTEGER:: fi,ei,vi,i,j,l,fl2fl(nflags),flg(nflags),fli   !!!
 CHARACTER(LEN=*)::filename                                                   !!!
-LOGICAL:: ok_f(nf),ok_e(ne),ok_v(nv)                                         !!!
+LOGICAL:: ok_f(nf),ok_e(ne),ok_v(nv),ok_fl(nflags),new                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! New sizes                                                                  !!!
-nflags2=nflags/(ntramaps+1)                                                  !!!
-nf2=nf/(ntramaps+1)                                                          !!!
-ne2=ne/(ntramaps+1)                                                          !!!
-nv2=nv/(ntramaps+1)                                                          !!!
+nflags=nflags/(ntramaps+1)                                                  !!!
+nf=nf/(ntramaps+1)                                                          !!!
+ne=ne/(ntramaps+1)                                                          !!!
+nv=nv/(ntramaps+1)                                                          !!!
 IF(ntramaps.eq.0)THEN                                                        !!!
   WRITE(*,'(A)') 'Structure in the '//TRIM(ADJUSTL(filename))// &            !!!
                         & '.flg or .b.flg file is already a primitive cell.' !!!
@@ -207,16 +209,22 @@ END IF                                                                       !!!
 ok_f=.false.                                                                 !!!
 ok_e=.false.                                                                 !!!
 ok_v=.false.                                                                 !!!
+ok_fl=.false.                                                                 !!!
 fi=0                                                                         !!!
 ei=0                                                                         !!!
 vi=0                                                                         !!!
+fli=0
 f2f=0                                                                        !!!
 e2e=0                                                                        !!!
 v2v=0                                                                        !!!
-DO i=1,nflags                                                                !!!
+fl2fl=0                                                                        !!!
+ALLOCATE(nface2(nf))
+nface2=0
+DO i=1,nflags*(ntramaps+1)                                                   !!!
   ! If face not marked yet                                                   !!!
   IF(.not.ok_f(flag(i,1)))THEN                                               !!!
     fi=fi+1                                                                  !!!
+    nface2(fi)=nface(flag(i,1))
     ! Get the list of equivalent faces                                       !!!
     l=1                                                                      !!!
     face(l)=flag(i,1)                                                        !!!
@@ -259,13 +267,53 @@ DO i=1,nflags                                                                !!!
     ! Map them all to vi                                                     !!!
     v2v(vertex(1:l))=vi                                                      !!!
   END IF                                                                     !!!
+  ! If flag not marked yet                                                   !!!
+  IF(.not.ok_fl(i))THEN                                                      !!!
+    fli=fli+1                                                                !!!
+    ! Get the list of equivalent faces                                       !!!
+    l=1                                                                      !!!
+    flg(l)=i                                                                 !!!
+    DO j=1,ntramaps                                                          !!!
+      l=l+1                                                                  !!!
+      flg(l)=tmaps(j,i)                                                      !!!
+    END DO                                                                   !!!
+    ! Set these faces as marked                                              !!!
+    ok_fl(flg(1:l))=.true.                                                   !!!
+    ! Map them all to fi                                                     !!!
+    fl2fl(flg(1:l))=fli                                                      !!!
+  END IF                                                                     !!!  
 END DO                                                                       !!!
-! Relabelling flags                                                          !!!
+! Reallocating faces sizes
+CALL MOVE_ALLOC(nface2,nface)
+! Relabelling flags elements                                                 !!!
 flag(:,1)=f2f(flag(:,1))                                                     !!!
 flag(:,2)=e2e(flag(:,2))                                                     !!!
 flag(:,3)=v2v(flag(:,3))                                                     !!!
+! Reallocating flags
+ALLOCATE(flag2(nflags,3),neigh_flag2(nflags,3),flag_color2(nflags))
+l=0
+DO i=1,nflags*(ntramaps+1)
+  new=.true.
+  DO j=1,i-1
+    IF(fl2fl(i).eq.fl2fl(j))THEN
+      new=.false.
+      EXIT
+    END IF
+  END DO
+  IF(new)THEN
+    l=l+1
+    flag2(l,:)=flag(i,:)
+    neigh_flag2(l,:)=fl2fl(neigh_flag(i,:))
+    flag_color2(l)=flag_color(i)
+  END IF
+END DO
+
+CALL MOVE_ALLOC(flag2,flag)
+CALL MOVE_ALLOC(neigh_flag2,neigh_flag)
+CALL MOVE_ALLOC(flag_color2,flag_color)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE flg_pri_reduc                                                 !!!
+END SUBROUTINE flg_to_pri                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

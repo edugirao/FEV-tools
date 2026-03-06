@@ -408,7 +408,7 @@ SUBROUTINE write_xyz(nv,r,filename)                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nv,i,u                                                             !!!
-REAL(KIND=8):: r(nv,3)                                                       !!!
+REAL(KIND=8):: r(nv,2)                                                       !!!
 CHARACTER(LEN=*):: filename                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                         !!!

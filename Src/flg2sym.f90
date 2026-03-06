@@ -8,25 +8,43 @@ USE tools_maps                                                               !!!
 USE tools_read                                                               !!!
 USE tools_symm                                                               !!!
 USE tools_writ                                                               !!!
+USE tools_conv                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,ne,nv,nflags,nrotmaps,nmirmaps,nglimaps,ntramaps                !!!
-INTEGER:: mirror_count,nmaps,nrot,nmir                                       !!!
+INTEGER:: mirror_count,nmaps,nrot,nmir,nmax                                  !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),m2(:,:),m1(:,:)                     !!!
 INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:)                          !!!
 INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
 INTEGER,ALLOCATABLE:: rot_i(:),rot_n(:),mir_i(:),mir_m(:)                    !!!
+INTEGER,ALLOCATABLE:: e_in_f(:,:),v_in_f(:,:)                                !!!
 CHARACTER*1,ALLOCATABLE:: rot_e(:),mir_e(:)                                  !!!
 CHARACTER*100:: filename                                                     !!!
 CHARACTER*4:: group                                                          !!!
-LOGICAL:: nocross                                                            !!!
+LOGICAL:: nocross,flg,fcs                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading the flag graph from a .flg or a .b.flg file                        !!!
+! Where to read the system's data                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
+CALL wheretoread(flg,fcs,filename)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading the flag graph or obtaining it from faces-info                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(flg)THEN                                                                  !!!
+  ! Reading the flag graph from a .flg or a .b.flg file                      !!!
+  WRITE(*,*) 'Reading from a .b.flg or a .flg file.'                         !!!
+  CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)   !!!
+ELSE IF(fcs)THEN                                                             !!!
+  ! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)!!!
+  WRITE(*,*) 'Reading from a .b.fcs or a .fcs file.'                         !!!
+  CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)     !!!
+  ! Create flg from fcs (allocations inside fcs_to_flg)                      !!!
+  CALL fcs_to_flg(nf,nmax,nface,e_in_f,v_in_f,nflags,flag,neigh_flag,flag_color)
+ELSE                                                                         !!!
+  STOP 'No flag-graph or faces-info file found!'                             !!!
+END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

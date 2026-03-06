@@ -6,22 +6,47 @@ PROGRAM fev2pov                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_read                                                               !!!
 USE tools_povr                                                               !!!
+USE tools_conv                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: u,nf,ne,nv,i,j,l,ivrot(3)                                          !!!
+INTEGER:: u,nf,ne,nv,i,j,l,ivrot(3),nflags,nmax                              !!!
 INTEGER,ALLOCATABLE:: fev(:,:,:)                                             !!!
+INTEGER,ALLOCATABLE:: nface(:),e_in_f(:,:),v_in_f(:,:)                       !!!
+INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
 REAL(KIND=8):: vloc(3),v_at(3),v_up(3),v_rg(3),vl(4,3)                       !!!
 REAL(KIND=8):: r(3),delta,blue(4),red(4),v(3)                                !!!
 CHARACTER*100:: filename                                                     !!!
-CHARACTER*20::pov_command                                                    !!!
+! CHARACTER*20::pov_command                                                  !!!
 CHARACTER*5:: aux                                                            !!!
+LOGICAL:: flg,fcs,fevf                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying the input file                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading embedding tensor from .fev file (allocations inside)               !!!
+! Where to read the system's data                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL read_fev(nf,ne,nv,fev,filename)                                         !!!
+fevf=.false.                                                                 !!!
+INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fev',EXIST=fevf)                     !!!
+CALL wheretoread(flg,fcs,filename)                                           !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Reading the fev tensor or obtaining it from flag graph or faces-info       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(fevf)THEN                                                                 !!!
+  ! Reading embedding tensor from .fev file (allocations inside)             !!!
+  CALL read_fev(nf,ne,nv,fev,filename)                                       !!!  
+ELSE IF(flg)THEN                                                             !!!
+  ! Reading the flag graph from a .flg or a .b.flg file                      !!!
+  CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)   !!!
+  ! Creating the fev tensor                                                  !!!
+  CALL flg_to_fev(nflags,flag,nf,ne,nv,fev)                                  !!!
+ELSE IF(fcs)THEN                                                             !!!
+  ! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)!!!
+  CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)     !!!
+  ! Create fev from fcs (allocations inside fcs_to_fev)                      !!!
+  CALL fcs_to_fev(nf,ne,nv,nmax,nface,e_in_f,v_in_f,fev)                     !!!
+ELSE                                                                         !!!
+  STOP 'No fev-tensor, flag-graph or faces-info file found!'                 !!!
+END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.pov')                         !!!
 vloc(1)=10+0.5*nf ; vloc(2)=10+0.5*nv ; vloc(3)=10+0.5*ne                    !!!
@@ -94,8 +119,8 @@ CALL pov_arrows(nv,2,u)                                                      !!!
 ! Arrow                                                                      !!!
 CALL pov_arrows(ne,3,u)                                                      !!!
 CLOSE(UNIT=u)                                                                !!!
-pov_command='povray +W1000 +H1000'                                           !!!
-CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'.pov')               !!!
+! pov_command='povray +W1000 +H1000'                                           !!!
+! CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'.pov')               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Face slices                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -163,8 +188,8 @@ DO i=1,nf                                                                    !!!
   ! Arrow                                                                    !!!
   CALL pov_arrows(ne,3,u)                                                    !!!
   CLOSE(UNIT=u)                                                              !!!
-  pov_command='povray +W1000 +H1000'                                         !!!
-  CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'-f'//TRIM(ADJUSTL(aux))//'.pov')
+!   pov_command='povray +W1000 +H1000'                                         !!!
+!   CALL SYSTEM(pov_command//' '//TRIM(ADJUSTL(filename))//'-f'//TRIM(ADJUSTL(aux))//'.pov')
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END PROGRAM fev2pov                                                          !!!
