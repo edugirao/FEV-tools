@@ -23,12 +23,19 @@
     urlcolor=black,        % color of external links
     linktoc=page            % only page is linked
 }%
-\def\myversion{1.0.1}
+\def\myversion{1.1.0}
 \date{}
 %\title{%
 
 %}
 \usepackage{hyperref}
+
+
+\newcommand{\fev}{\texttt{.fev}}
+\newcommand{\fcs}{\texttt{.fcs}}
+\newcommand{\flg}{\texttt{.flg}}
+\newcommand{\fcsb}{\texttt{.b.fcs}}
+\newcommand{\flgb}{\texttt{.b.flg}}
 \begin{document}
 
 \begin{flushleft}
@@ -52,7 +59,7 @@
 
 \begin{flushleft}
     \begin{bfseries}
-        \large{Version date: March 1, 2026}\\
+        \large{Version date: Xxxxx x, 2026}\\
         \large{Manual date: \today}\\
     \end{bfseries}
 \end{flushleft}
@@ -61,7 +68,7 @@
 
 \chapter{The Emedding Tensor and the Flag-Graph}
 
-The \emph{Embedding Tensor} consists of a cuboid data structure $\Phi$ with elements $\Phi_{f,e,v}$, where the $f$/$e$/$v$ indexes label the faces/edges/vertices of the system. These elements are given by:
+The \emph{Embedding Tensor} (\emph{fev tensor}) consists of a cuboid data structure $\Phi$ with elements $\Phi_{f,e,v}$, where the $f$/$e$/$v$ indexes label the faces/edges/vertices of the system. These elements are given by:
 \begin{equation}
 \Phi_{f,e,v} = \begin{cases}
     1, & \textrm{if vertex $v$ is contained in edge $e$}\\
@@ -77,23 +84,23 @@ The labelling of the face/edge/vertex objects is illustrated for the structure i
 \label{fev-labelling}
 \end{figure} 
 
-Each nonzero element of the embedding tensor defines one an entity called a \emph{flag}. When the involved edge is a bridge, each nonzero tensor element defines a pair of twin flags. A flag can be represented graphically over the structure by an arrow that emerges from the corresponding vertex, along its corresponding edge, and has a mark (two small parallel segments) towards the corresponding cell. It also defines either a clockwise or a counterclockwise orientation around the face. In Fig.~\ref{fev-labelling} we illustrate the $(1,2,3) flag$, where the blue color of the flag symbol and the blue clockwisely oriented circle indicate its orientation. In Fig.~\ref{fev-labelling}d we illustrate the counterclockwisely oriented $(1,4,4)$ in red color.
+Each nonzero element of the embedding tensor defines an entity called a \emph{flag}. When the involved edge is a bridge, each nonzero tensor element defines a pair of flags, usually called \emph{twin flags}. A flag can be represented graphically over the structure by an arrow that emerges from the corresponding vertex, along its corresponding edge, and has a mark (two small parallel segments) towards the corresponding face. It also defines either a clockwise or a counterclockwise orientation around the face. In Fig.~\ref{fev-labelling} we illustrate the $(1,2,3)$ flag, where the blue color of the flag symbol and the blue clockwisely oriented circle indicate its orientation. In Fig.~\ref{fev-labelling}d we illustrate the counterclockwisely oriented $(1,4,4)$ flag in red color.
 
-Each flag has neighboring flags, with which they share two elements in common. Each flag has a face-neighbor (same $e$ and $v$), an edge-neighbor (same $f$ and $v$), and a vertex-neighbor (same $f$ and $e$).  When we connect each flag to its neighbors, we have what we define as the flag-graph.
-
-
+Each flag has neighboring flags, with which they share two elements in common. Each flag has a face-neighbor (same $e$ and $v$), an edge-neighbor (same $f$ and $v$), and a vertex-neighbor (same $f$ and $e$).  When we connect each flag to its neighbors, we have what we define as the flag-graph. Twin flags have the same three defining elements (same $f$, $e$, and $v$), but are considered face-neighbors for each other by convention.
 
 
 \chapter{File formats}
 
+The embedding tensor is the basic data structure in \textsc{FEVtools}. However, there are more self-contained structures that are more convenient for certain tasks involving the studied structures. In this chapter we describe in details each of these formats. 
+
 \section{The .fev format}
 
-In \textsc{FEVtools}, the embedding tensor it exchanged with the user through a \verb-.fev- file. This format is decribed below:
+In \textsc{FEVtools}, the embedding tensor is exchanged with the user through a \fev~file. This format is decribed below:
 \begin{itemize}
- \item A first line containing the three integers \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of faces, edges and vertices of the tensor, respectively;
+ \item A first line containing three integers, \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of faces, edges and vertices of the tensor, respectively;
  \item One line for each tensor entry (either 0 or 1), where the elements are ordered in a nested triple-loop, where the innermost (outermost) loop runs over the vertices (faces).
 \end{itemize}
-A simple \textsc{FORTRAN} code reads the tensor from a \verb-.fev- file with \verb-UNIT=1- as illustrated below: 
+A simple \textsc{FORTRAN} code reads the tensor from a \fev~file with \verb-UNIT=1- as illustrated below: 
 \begin{verbatim}
 READ(1,*) nf,ne,nv          ! .fev file format:
 DO i=1,nf                   ! - 1st line: nf ne nv
@@ -105,14 +112,14 @@ DO i=1,nf                   ! - 1st line: nf ne nv
 END DO   
 \end{verbatim}
 
-The \verb-.fev- is an easy way for the user to input the studied structure. Other formats are more adequated to obtain further information, but they can be extracted from the \verb-.fev- file from specific tools.
+The \fev~format is an easy way for the user to input the studied structure. Other formats are more adequated to obtain further information, but they can be extracted from the \fev~file from specific tools.
 
 \section{The .flg format}
-A flag is defined as a $(f,e,v)$ integer trio for which $\Phi_{f,e,v}=1$ (eventually we can have twin flags with $(f',e',v')=(f,e,v)$). They form a flag-graph that can be extracted from a given embedding tensor, and consists of: 1) the list of flags, 2) the list of face-, edge-, and vertex-neighbors of each flag, and 3) the flags orientations. In \textsc{FEVtools}, the flag-graph of a system can be exchanged with the user through a \verb-.flg- file. This format is decribed below:
+A flag is defined as a $(f,e,v)$ integer trio for which $\Phi_{f,e,v}=1$ (eventually we can have twin flags with $(f',e',v')=(f,e,v)$). They form a \emph{flag-graph}, an entity that can be extracted from a given embedding tensor, and consists of: 1) the list of flags, 2) the list of face-, edge-, and vertex-neighbors of each flag, and 3) the flags orientations. In \textsc{FEVtools}, the flag-graph of a system can be exchanged with the user through a \flg~file. This format is decribed below:
 \begin{itemize}
- \item A first line containing the four integers \verb-nflags-, \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of flags, faces, edges and vertices of the stucture, respectively;
+ \item A first line containing four integers, \verb-nflags-, \verb-nf-, \verb-ne-, and \verb-nv-, corresponding to the number of flags, faces, edges and vertices of the stucture, respectively;
  \item A second line containing a vector with the number of edges from each face of the structure.
- \item In the following we have one line per flag, containing 7 integers: 1-3) the $f$, $e$, and $v$ elements of the flag, 4-6) its face-, edge-, and vertex neighbor flags, and 7) the flag orientation (eithe +1 or -1).
+ \item In the following we have one line per flag, containing 7 integers: 1-3) the $f$, $e$, and $v$ elements of the flag, 4-6) its face-, edge-, and vertex neighbor flags, and 7) the flag orientation (either +1 or -1).
 \end{itemize}
 In \textsc{FORTRAN} it can be read as: 
 \begin{verbatim}
@@ -122,7 +129,7 @@ DO i=1,nflags
   READ(1,*) flag(i,:),neigh_flag(i,:),flag_color(i)
 END DO 
 \end{verbatim} 
-where \verb-flag- and \verb-neigh_flag- are \verb-nflag-$\times$3 matrices. An alternative \verb-.b.flg- format is written/read in binary form in \textsc{FORTRAN} as
+where \verb-flag- and \verb-neigh_flag- are \verb-nflag-$\times$3 matrices. An alternative \flgb~format is written/read in binary form in \textsc{FORTRAN} as
 \begin{verbatim}
 READ(1) nflags,nf,ne,nv
 READ(1) nface
@@ -131,20 +138,20 @@ READ(1) neigh_flag
 READ(1) flag_color
 \end{verbatim} 
 
-The \verb-.flg- format is convenient to find symmetry maps that enable us to determine the symmetry group of a given structure or to determine if tow structures are equivalent or not.
+The \flg~format is convenient to find symmetry maps that enable us to determine the symmetry group of a given structure or to determine if tow structures are equivalent or not.
 
 \section{The .fcs format}
-The faces-info format contains structural information relative to each face of the system. In \textsc{FEVtools}, it can be exchanged with the user through a \verb-.fcs- file. This format is decribed below:
+The \emph{faces-info} data structure is the most complete one when using \textsc{FEVtools}. It contains structural information relative to each face of the system. It further classifies faces and edges into \emph{representative} of \emph{non-representative}. In a set of faces which are symmetry-related, we elect only one of them to be the \emph{representative} one, while the reamining ones are classified as \emph{non-representative}. The same classification is applied to the edges within a given face: if there are symmetry-related edges within a given face, one is elected as the \emph{representative}, with the other ones being called \emph{non-representatives}. The \emph{faces-info} data structure further indicates explicitly which edges are bridges. In \textsc{FEVtools}, the \emph{faces-info} data can be exchanged with the user through a \fcs~file format, as decribed below:
 \begin{itemize}
- \item A first line containing the four integers \verb-nf-, \verb-ne-, \verb-nv-, and \verb-nmax-, corresponding to the number of faces, edges, vertices of the structure, and the maximal number of edges in a face, respectively;
- \item Then we have blocks of 6 lines, one for each faces of the structure. Each block contains:
+ \item A first line containing four integers, \verb-nf-, \verb-ne-, \verb-nv-, and \verb-nmax-, corresponding to the number of faces, edges, vertices of the structure, and the maximal number of edges in a face, respectively;
+ \item Then we have blocks of 6 lines, one for each face of the structure. Each block contains:
  \begin{enumerate}
-  \item The number of edges in the face and a logical (\verb-T- or \verb-F-) value indicating if the face is a representative face (\verb-T-) or if it is symmetry related to a representative one (\verb-F-);
+  \item The number of edges in the face and a logical (\verb-T- or \verb-F-) value indicating if the face is a representative face (\verb-T-) or if it is non-representative one (\verb-F-);
   \item The faces touching the reference face;
   \item The edge forming the reference face;
   \item The vertices forming the reference face;
   \item Logical entries indicating if the edges forming the face are bridges or not;
-  \item A set of logical values (one for each edge of the face) indicating if the edge is a representative face (\verb-T-) or if it is symmetry related to a representative one (\verb-F-) within the face.
+  \item A set of logical values (one for each edge of the face) indicating if the edge is a representative one within the face (\verb-T-) or if it is a non-representative one (\verb-F-).
  \end{enumerate}
 \end{itemize}
 
@@ -197,7 +204,7 @@ DO i=1,nf
   READ(1,*) u_in_f(i,1:nface(i))
 END DO
 \end{verbatim} 
-where \verb-f_in_f- is a \verb-nf-$\times$\verb-nmax- matrix, just as \verb-e_in_f- and the others. An alternative \verb-.b.fcs- format is written/read in binary form in \textsc{FORTRAN} as
+where \verb-f_in_f- is a \verb-nf-$\times$\verb-nmax- matrix, just as \verb-e_in_f- and the others. An alternative \fcsb~format is written/read in binary form in \textsc{FORTRAN} as
 \begin{verbatim}
 READ(1) nf,ne,nv,nmax
 DO i=1,nf
@@ -210,18 +217,18 @@ DO i=1,nf
 END DO
 \end{verbatim} 
 
-The \verb-.fcs- format is convenient to conduct structure generation through an add dimer approach.
+The \fcs~format is convenient to conduct structure generation (and coordinates generation) through an add dimer approach, as well as the natural format to determine the polygonal symbol of the system.
 
 \chapter{Using \textsc{FEVtools}}
 
-\textsc{FEVtools} is a \textsc{FORTRAN} package of applications that includes a total of 23 tools. Some of these tools are devoted to format conversion involving the \verb-.fev-, \verb-.flg-, and \verb-.fcs- types. The remaining ones are intended to 8 different tasks, as listed below:
+\textsc{FEVtools} is a \textsc{FORTRAN} package of applications that includes a total of 16 tools. Some of these tools are devoted to format conversion involving the \fev, \flg, and \fcs~types. The remaining ones are intended to 9 different tasks, as listed below:
 
 \begin{itemize}
  \item \verb-pov-: tensor illustration generation in POVRAY; 
  \item \verb-sum-: computation of sum rules;
  \item \verb-gen-: structure generation;
  \item \verb-smb-: polygonal symbol generation;
- \item \verb-xyz-: coordinates generation;
+ \item \verb-xyz-: coordinates generation (or \verb-.fxx- files generation from coordinates);
  \item \verb-iso-: isomorphism checking; 
  \item \verb-pri-: primitive cell reduction;
  \item \verb-sym-: symmetry identification.
@@ -236,7 +243,7 @@ A fluxogram detailing the tools and their purposes is illustrated in Fig.~\ref{f
 \end{figure} 
 
 \section{The tools}
-The 23 FEV-tools are explicitely listed below:
+The 16 FEV-tools are explicitely listed below:
 \begin{itemize}
  \item \verb-fev2fcs-: tensor to faces-info conversion; 
  \item \verb-fev2flg-: tensor to flag-graph conversion;
@@ -246,60 +253,54 @@ The 23 FEV-tools are explicitely listed below:
  \item \verb-flg2fev-: flag-graph to tensor conversion;
  \item \verb-for2bin-: formatted to unformatted format conversion (and vice-versa);
  \item \verb-fev2pov-: Tensor illustration generation in POVRAY from embedding-tensor; 
- \item \verb-flg2pov-: Tensor illustration generation in POVRAY from flag-graph;
- \item \verb-fcs2pov-: Tensor illustration generation in POVRAY from faces-info;
  \item \verb-fev2sum-: computes sum rules from the embedding-tensor;  
- \item \verb-flg2sum-: computes the sum rules from the flag-graph;
- \item \verb-fcs2sum-: computes the sum rules from the faces-info; 
- \item \verb-fcs2kid-: structure generation;
+ \item \verb-fcs2gen-: structure generation;
  \item \verb-fcs2smb-: polygonal symbol generation from faces-info;
- \item \verb-flg2smb-: polygonal symbol generation from flag-graph;
  \item \verb-fcs2xyz-: coordinates generation;
  \item \verb-flg2iso-: isomorphism checking from flag-graph; 
- \item \verb-fcs2iso-: isomorphism checking from faces-info; 
  \item \verb-flg2pri-: reduction to primitive cell from flag-graph;
- \item \verb-flg2pri-: reduction to primitive cell from faces-info;
  \item \verb-flg2sym-: computes the symmetry group from flag-graph;
- \item \verb-fcs2sym-: computes the symmetry group from faces-info.
+ \item \verb-flg4xyz-: computes fev-tensor/flag-graph/faces-info from coordinates.
 \end{itemize}
 
 
 \subsection{Compilation}
-To compile the package, just edit the \verb-makefile- indicating your \textsc{FORTRAN} compiler and type \verb-make- to build all the 23 tools. Each tool is used by simply executing the corresponding binary in a terminal by typing ``\verb-./binary-''.
+To compile the package in a simple LINUX environment, just edit the \verb-makefile- indicating your \textsc{FORTRAN} compiler, enter in the package folder through the terminal, and type \verb-make- to build all the 16 tools. Each tool is used by simply executing the corresponding binary in a terminal by typing ``\verb-./binary-''.
 
 \subsection{A few words about input files}
-Except for \verb-fcs2gen- and \verb-flg2iso-, all the tools deal with a single system and read an \verb-inp- file which contains a \verb-systemlabel- string in its first line. Such a string identifies the system being studied, with the structure's relevant input file being named as a \verb-systemlabel.fev-, \verb-systemlabel.flg-, \verb-systemlabel.b.flg-, \verb-systemlabel.fcs- or a \verb-systemlabel.b.fcs- file, depending on the tool in consideration. The \verb-flg2iso- tool deals with a pair of systems, whose \verb-systemlabel1- and \verb-systemlabel2- labels are also read from an \verb-inp- file (one system string per line). On the other hand, the \verb-fcs2gen- tool reads an integer (from an \verb-igen- file) which represents the previous generation of structures. We detail the use of each tool in the next sections.
+Except for \verb-fcs2gen- and \verb-flg2iso-, all the tools deal with a single system and read an \verb-inp- file which contains a \verb-systemlabel- string in its first line. Such a string identifies the system being studied, with the structure's relevant input file being named as a \verb-systemlabel.fev-, \verb-systemlabel.flg-, \verb-systemlabel.b.flg-, \verb-systemlabel.fcs- or a \verb-systemlabel.b.fcs- file, depending on the tool in consideration. The \verb-flg2iso- tool deals with a pair of systems, whose \verb-systemlabel1- and \verb-systemlabel2- labels are also read from an \verb-inp- file (one system string per line). On the other hand, the \verb-fcs2gen- tool does not read an \verb-inp- file, but reads an integer (from an \verb-igen- file) which represents the previous generation of structures. We detail the use of each tool in the next sections.
 
 
 \section{Conversion tools}
-There are 7 tools for format conversion involving the \verb-.fev-, \verb-.flg-, and \verb-.b.fcs- formats. Upon simple execution, all of them read a \verb-inp- file containing only the \verb-systemlabel- string in the first line, and work on \verb-systemlabel.b.***- or \verb-systemlabel.***- files. Here is the list:
+There are 7 tools for format conversion involving the \fev, \flg, and \fcs~formats. Upon simple execution, all of them read a \verb-inp- file containing only the \verb-systemlabel- string in the first line, and work on \verb-systemlabel.b.***- or \verb-systemlabel.***- files. Here is the list:
 
 \begin{itemize}
- \item \verb-fev2flg-: embedding-tensor to flag-graph conversion - creates \verb-.flg- and \verb-.b.flg- files of a given structure out of its \verb-.fev- file;
- \item \verb-fev2fcs-: embedding-tensor to faces-info conversion - creates \verb-.fcs- and \verb-.b.fcs- files of a given structure out of its \verb-.fev- file;
- \item \verb-flg2fev-: flag-graph to embedding-tensor conversion - creates the \verb-.fev- file of a given structure out of its \verb-.flg- or \verb-.b.flg- file;
- \item \verb-flg2fcs-: flag-graph to faces-info conversion - creates \verb-.fcs- and \verb-.b.fcs- files of a given structure out of its \verb-.flg- or \verb-.b.flg- file;
- \item \verb-fcs2fev-: faces-info to embedding-tensor conversion - creates the \verb-.fev- file of a given structure out of its \verb-.fcs- or \verb-.b.fsc- file;
- \item \verb-fcs2flg-: faces-info to flag-graph conversion - creates \verb-.flg- and \verb-.b.flg- files of a given structure out of its \verb-.fcs- or \verb-.b.fsc- file;
- \item \verb-for2bin-: binary-formatted conversion - in case of existing formatted \verb-.flg- and/or \verb-.fcs- files, creates the corresponding unformatted \verb-.b.flg- and \verb-.b.fcs- binary files of a given structure, and vice-versa (creates formatted files out of unformatted data).
+ \item \verb-fev2flg-: embedding-tensor to flag-graph conversion - creates \flg~and \flgb~files of given structure(s) out of its/their \fev~file;
+ \item \verb-fev2fcs-: embedding-tensor to faces-info conversion - creates \fcs~and \fcsb~files of given structure(s) out of its/their \fev~file (as a ``side effect'', also creates \flg~and \flgb~files);
+ \item \verb-flg2fev-: flag-graph to embedding-tensor conversion - creates the \fev~file of a given structure out of its \flg~or \flgb~file;
+ \item \verb-flg2fcs-: flag-graph to faces-info conversion - creates \fcs~and \fcsb~files of a given structure out of its \flg~or \flgb~file;
+ \item \verb-fcs2fev-: faces-info to embedding-tensor conversion - creates the \fev~file of a given structure out of its \fcs~or \verb-.b.fsc- file;
+ \item \verb-fcs2flg-: faces-info to flag-graph conversion - creates \flg~and \flgb~files of a given structure out of its \fcs~or \verb-.b.fsc- file;
+ \item \verb-for2bin-: binary-formatted conversion - in case of existing formatted \flg~and/or \fcs~files, creates the corresponding unformatted \flgb~and \fcsb~binary files for a given structure, and vice-versa (creates formatted files out of unformatted data). Does nothing if no formatted nor unformatted files are found.
 \end{itemize}
 
-For the \verb-fev2flg- (\verb-fev2fcs-) tool, if there are two or more non-equivalent flag-graphs associated with the tensor, it will generate \verb-.flg- and \verb-.b.flg- files (\verb-.fcs- and \verb-.b.fcs- files) for all of them. In that case, the files for the first graph (structure) will be named as \verb-systemlabel.flg- and \verb-systemlabel.b.flg- (\verb-systemlabel.fcs- and \verb-systemlabel.b.fcs-), while the files for the second one will be named as \verb-systemlabel_2.flg- and \verb-systemlabel_2.b.flg- (\verb-systemlabel_2.fcs- and \verb-systemlabel_2.b.fcs-), and so on.
+For the \verb-fev2flg- (\verb-fev2fcs-) tool, if there are two or more non-equivalent flag-graphs associated with the same tensor, it will generate \flg~and \flgb~files (\fcs~and \fcsb~files) for all of them. In that case, the files for the first graph (structure) will be named as \verb-systemlabel.flg- and \verb-systemlabel.b.flg- (\verb-systemlabel.fcs- and \verb-systemlabel.b.fcs-), while the files for the second one will be named as \verb-systemlabel_2.flg- and \verb-systemlabel_2.b.flg- (\verb-systemlabel_2.fcs- and \verb-systemlabel_2.b.fcs-), and so on.
 
-For \verb-flg2fev-, there is an important note. More than being used for \verb-.flg- to \verb-.fev- conversion, it can be used as a tool to build the \verb-.fev- file for a structure that you draw on a sheet of paper, for example. In your drawing, enumerate all the elements and create a ``fake'' \verb-.flg- with the list of flags. For the \verb-nface-, \verb-neigh_flag-, and \verb-flag_color- entries, write anything, they do not matter to build the embedding tensor. However, after generating the \verb-.fev- from your drawing from your face \verb-.flg-, you have to run \verb-fev2flg- to create the corret \verb-.flg- file.
+For \verb-flg2fev-, there is an important note. More than being used for \fev~to \fev~conversion, it can be used as a tool to build the \fev~file for a structure that you draw on a sheet of paper, for example. In your drawing, enumerate all the elements and create a ``fake'' \flg~with the list of flags. For the \verb-nface-, \verb-neigh_flag-, and \verb-flag_color- entries, write anything, they do not matter to build the embedding tensor. However, after using your ``fake'' \flg~to generate the \fev~file, you have to run \verb-fev2flg- to create the corret \flg~file with the true neighbor and orientation information.
 
 
 \section{Creating an illustrative figure of the tensor}
 
-Use the \verb-fev2pov- tool to read a system's \verb-systemlabel.fev- file and create a \verb-systemlabel.pov- file for an illustration of tensor in a perspective view, with 0/1 entries represented by red/blue cubes labelled with their values. It further illustrates the faces/edges/vertices axes in green, in a black background. The specific \verb-systemlabel.fev- file has its \verb-systemlabel- file read from the \verb-inp- file (containing only the \verb-systemlabel- string in the first line).
+Use the \verb-fev2pov- tool to read a system's \verb-systemlabel.fev- file and create a \verb-systemlabel.pov- file for an illustration of the tensor in a perspective view. The 0/1 entries represented by red/blue cubes labelled with their values in a cartesian 3-axes system. It further illustrates the faces/edges/vertices axes in green, in a black background. The specific \verb-systemlabel.fev- file has its \verb-systemlabel- read from the \verb-inp- file (containing only the \verb-systemlabel- string in the first line).
 
-The alternative \verb-flg2pov- and \verb-fcS2pov- tools create the same \verb-systemlabel.pov- file out of the \verb-systemlabel.flg-/\verb-systemlabel.b.flg- and \verb-systemlabel.fcs-/\verb-systemlabel.b.fcs- files, respectively. However, the \verb-fev2pov- tool is the primary one for this purpose, since the \verb-flg2pov- and \verb-fcS2pov- tools internally convert the flag-graph and faces-info data into the embedding-tensor format, respectively, before generating the \verb-systemlabel.pov- file. 
+The \fev~format is the primary one to generate the tensor illustration. In case you do not have the \fev~file, \verb-fev2pov- will look for a \flgb~or a \flg~file, read it, internally convert it to the tensor format and create the tensor illustration. If you do not have the \fev~file, nor the \flgb~and \flg~files, \verb-fev2pov- will look for a \fcsb~or a \fcs~file, read it, internally convert it to the tensor format and create the tensor illustration.
+
 
 \section{Computing sum rules for an embedding tensor}
 
 Use the \verb-fev2sum- executable to compute the sum rules for an embedding tensor from a \verb-systemlabel.fev- file and print the results in a \verb-systemlabel.sum- file. In addition to the \verb-systemlabel.fev- file, you have to have the \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. 
 
-The alternative \verb-flg2sum- and \verb-fcS2sum- tools create the same \verb-.sum- output from the \verb-.flg-/\verb-.b.flg- and \verb-.fcs-/\verb-.b.fcs- files, respectively. However, the \verb-fev2sum- tool is the primary one for this purpose, since \verb-flg2sum- and \verb-fcS2sum- first convert flag-graph and faces-info data into embedding-tensor format, respectively, before generating the \verb-systemlabel.sum- file. 
+The \fev~format is the primary one to compute the sum rules. In case you do not have the \fev~file, \verb-fev2sum- will look for a \flgb~or a \flg~file, read it, internally convert it to the tensor format and compute the sum rules. If you do not have the \fev~file, nor the \flgb~and \flg~files, \verb-fev2sum- will look for a \fcsb~or a \fcs~file, read it, internally convert it to the tensor format and compute the sum rules.
 
 \section{Identifying the symmetry group}
 
@@ -310,7 +311,28 @@ Use the \verb-flg2sym- executable to identify the symmetry group (printed on a \
  \item A \verb-.mir- file with the structural elements unchanged under mirror reflexions, and their corresponding maps (a single element can be part of more than one mirror map).
 \end{itemize}
 
-The \verb-fcs2sym- is a derived tool that does the same task as he \verb-flg2sym-, but from the \verb-.fcs- or \verb-.b.fcs- files of the structure. In practical terms, \verb-fcs2sym- internally convert the faces-info data from the two structures to flag-graphs and perform the same task as \verb-flg2sym- (which is the primary tool for symmetry identification).
+The \verb-.map- format contains:
+\begin{itemize}
+ \item First line: the number of maps;
+ \item Second line: the maximal number of fixed elements in the first map;
+ \item Third line: a \verb-map(:)- vector with size \verb-nflags-, with \verb-map(i)-indicating to which flag the \verb-i--th flag is mapped;
+ \item Then two similar lines for the next map, ans so on.
+\end{itemize}
+
+The \verb-.rot- format contains:
+\begin{itemize}
+ \item First line: the number of element containing a rotation axis;
+ \item Then one line for each element containing a rotation axis, with: 1) a letter ($f$, $e$, or $v$) indicating the type of element, 2) the index of that element, and 3) the rotation axis order.
+\end{itemize}
+
+The \verb-.mir- format contains:
+\begin{itemize}
+ \item First line: the number of element contained in a mirror;
+ \item Then one line for each element contained in a mirror, with: 1) a letter ($f$, $e$, or $v$) indicating the type of element, 2) the index of that element, and 3) the index of the map it belongs.
+\end{itemize}
+
+The \flg~format is the primary one for symmetry identification. In case you do not have the \flgb~or \flg~file, \verb-flg2sym- will look for a \fcsb~or a \fcs~file, read it, internally convert it to the flag-graph format and identify the symmetry group.
+
 
 \section{Polygonal symbol generation}
 
@@ -321,19 +343,19 @@ Use the \verb-fcs2smb- executable to create the polygonal symbol for the studied
 \end{itemize}
 The first symbol version is the simplest most sintetic one. The second includes subscripts indicating the neighboring faces of each face, but grouped when two faces of the same size have the same set of neighbors. The third is a fully extended one, with subscripts indicating the neighboring faces of each face (not grouping faces with same set of neighbors).
 
-The \verb-flg2smb- tool is a derived Utility that does the same task as he \verb-fcs2smb-, but from the \verb-.flg- or \verb-.b.flg- files of the structure. In practical terms, \verb-flg2smb- internally convert the flag-graph data to part of the faces-info data and perform the same task as \verb-fcs2smb- (which is the primary tool for symbol generation).
+The \fcs~format is the primary one for symbol generation. In case you do not have the \fcsb~or \fcs~file, \verb-fcs2smb- will look for a \flgb~or a \flg~file, read it, internally convert it to the faces-info format and identify the symmetry group. Preferable, you have to run \verb-flg2sym- first, otherwise the symbol will be generated with an $x$ instead of the correct lattice type ($t$, $h$, $c$, $r$, or $o$).
 
 \section{Reduction to primitive cell}
 
-Suppose you have a \verb-.flg- file that does not represent a primitive cell for a given structure. You can construct the \verb-.fev- file for the corresponding primitive cell with \verb-flg2pri-. You have to have the \verb-systemlabel.flg- file of your structure to make the reduction. In addition to the \verb-systemlabel.flg- file, you have to have the \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. The resulting file will be named as \verb-systemlabel-\verb-primitive.fev-.
+Suppose you have a \flg~file that does not represent a primitive cell for a given structure. You can construct the \fev, \flgb, \flg, \fcsb, and \fcs~files for the corresponding primitive cell with \verb-flg2pri-. You have to have the \verb-systemlabel.flg- file of your structure to make the reduction. In addition to the \verb-systemlabel.flg- file, you have to have the \verb-inp- file (containing only the \verb-systemlabel- string in the first line) in the same folder. The resulting files will be named as \verb-systemlabel-\verb-primitive.xxx- or \verb-systemlabel-\verb-primitive.b.xxx-.
 
-The \verb-fcs2pri- tool is a derived Utility that does the same task as he \verb-flg2pri-, but from the \verb-.fcs- or \verb-.b.fcs- files of the structure. In practical terms, \verb-fcs2pri- internally convert the faces-info data to the corresponding flag-graph and perform the same task as \verb-flg2pri- (which is the primary tool for primitive cell reduction).
+The \flg~format is the primary one for primitive cell reduction. In case you do not have the \flgb~or \flg~file, \verb-flg2pri- will look for a \fcsb~or a \fcs~file, read it, internally convert it to the flag-graph format and proceed with the primitive cell reduction. 
 
-In addition to generating \verb-systemlabel-\verb-primitive.fev-, the \verb-flg2pri- and \verb-fcs2pri- tools print on the screen a message tellig if the input file corresponds to a primitive cell or the $N\times M$ cell size in the case of a conventional cell.
+In addition to generating the primitive cell files, \verb-flg2pri- prints on the screen a message tellig if the input file corresponds to a primitive cell or the $N\times M$ cell size in the case of a conventional cell.
 
 \section{Isomorphism checking}
 
-Use the \verb-flg2iso- tool to verify if there is an isomorphism relation between two structures. You will need the \verb-.flg- or \verb-.b.flg- files for the two systems and the \verb-inp- file has to have the \verb-systemlabel- strings for both systems (one per line). Upon execution, the program will print a message saying
+Use the \verb-flg2iso- tool to verify if there is an isomorphism relation between two structures. You will need the \flg~or\flgb~files for the two systems and the \verb-inp- file having the \verb-systemlabel- strings for both systems (one per line). Upon execution, the program will print a message saying
 \begin{verbatim}
 Isomorphic structures.
 \end{verbatim}
@@ -343,43 +365,34 @@ Non-isomorphic structures.
 \end{verbatim}
 on the screen.
 
-The \verb-fcs2iso- is a derived tool that does the same task as he \verb-flg2iso-, but from the \verb-.fcs- or \verb-.b.fcs- files of the structures. In practical terms, \verb-fcs2iso- internally convert the faces-info data from the two structures to flag-graphs and perform the same task as \verb-flg2iso- (which is the primary tool for isomorphism checking).
-
-
-
-
-
-
-
-
-
+The \flg~format is the primary one for isomorphism check. In case you do not have the \flgb~or \flg~file, \verb-flg2pri- will look for \fcsb~or \fcs~files, read them, internally convert them to the flag-graph format and proceed with the isomorphism check. 
 
 \section{Structure generation}
 
-The \verb-fcs2kid- tool creates a generation of structures with $N+1$ faces from a parent generation of structures with $N$ faces by means of the add dimer algorithm. In order to run it, you have to have 
+The \verb-fcs2gen- tool creates a generation of structures with $N+1$ faces from a parent generation of structures with $N$ faces by means of the add dimer algorithm. In order to run it, you have to have 
 \begin{itemize}
  \item A \verb-gensizeN- file (substitute \verb-N- in the filename by the number of faces) with the number of structures in the database of structures with $N$ faces;
  \item A \verb-gensystemsN- file (substitute \verb-N- in the filename by the number of faces) with the systemlabel strings (one per line) for the \verb-systemlabel.fcs- files from the database of structures of structures with $N$ faces. In each line, after the system label, we also have three integers, indicating 1) the number of its ancestor in the previous database, 2) the face index in which the dimer was added to generate the present structure, and 3) the number of translation maps (should be 0 for primitive cell files). Note: add 1 1 0 to the graphene system in the \verb-N=1- generation file;
  \item An \verb-igen- file containing the $N$ value of the parent generation;
- \item The \verb-.fcs- files for all the structures from the database.
+ \item The \fcs~files for all the structures from the database.
 \end{itemize}
 Once you have the correct files and the fev2kid executable, you just run it with
 \begin{verbatim}
-./fcs2kid 
+./fcs2gen 
 \end{verbatim}
-to generate the child generation of structures. It will generate the \verb-.b.flg- and \verb-.b.fcs- files for the new generation.
+to generate the child generation of structures. It will generate the \flgb~and \fcsb~files for the new generation.
 
 If you input 0 in \verb-igen-, it will automatically generate the graphene files (labelled as \verb-6-), together with the \verb-gensize1- and \verb-gensystems1- files.
 
 \section{Coordinates generation}
 
-During structure generation with the \verb-fcs2kid- tool, a \verb-.anc- file is also writen for each generated system. It contains 1) the system label of the ancestor system, 2) ancestor's face number in which the dimer is added, and 3) the indexes for the two edges within the face in which we add the dimer atoms.
+During structure generation with the \verb-fcs2gen- tool, a \verb-.anc- file is also writen for each generated system. It contains 1) the system label of the ancestor system, 2) ancestor's face number in which the dimer is added, and 3) the indexes for the two edges within the face in which we add the dimer atoms.
 
 Suppose we want to generate a rough initial set of coordinates for a given target structure. You can do it with the \verb-fcs2xyz- tool. In order to use it, you will need the following files:
 \begin{itemize}
  \item An \verb-inp- file with the system label for the target system;
- \item The \verb-.b.fcs- and \verb-.anc- files for the target system;
- \item The \verb-.b.fcs-, \verb-.xyz-, and \verb-.nxy- files for the target's ancestor.
+ \item The \fcsb~and \verb-.anc- files for the target system;
+ \item The \fcsb, \verb-.xyz-, and \verb-.nxy- files for the target's ancestor.
 \end{itemize}
 Then you just need to execute
 \begin{verbatim}
@@ -456,7 +469,7 @@ The important quantities for the structure optimization are $k$, $k_a$, $q$, and
 \end{verbatim}
 Depending on your system, you may have to tune these parameters to find reasonable results.
 
-If you want to generate the coordinates for a given system, you have to have its \verb-.anc- file and the \verb-.xyz-, \verb-.nxy-, and \verb-.anc- files for its ancestor. If you do not have the coordinates for the ancestor, the program looks for the ancestor's ancestor, and so on, down to graphene (which is the only system with two atoms). This works if you have run \verb-fcs2kid- and have the files for the previous generations of structures in the working directory. Then, when it finds an ancestor of the tree with already generated \verb-.xyz- and \verb-.nxy- files, it generates the coordinates through the following generations until the target system. Even if you do not have the \verb-.xyz- and \verb-.nxy- files for graphene, the program will create them in the last scenarion. Even though creating these files for graphene is not a hard task with a little thinking and maybe a drawing on a piece of paper. Below we show a possible form for graphene's \verb-.xyz- and \verb-.nxy- files.\\
+If you want to generate the coordinates for a given system, you have to have its \verb-.anc- file and the \verb-.xyz-, \verb-.nxy-, and \verb-.anc- files for its ancestor. If you do not have the coordinates for the ancestor, the program looks for the ancestor's ancestor, and so on, down to graphene (which is the only system with two atoms). This works if you have run \verb-fcs2gen- and have the files for the previous generations of structures in the working directory. Then, when it finds an ancestor of the tree with already generated \verb-.xyz- and \verb-.nxy- files, it generates the coordinates through the following generations until the target system. Even if you do not have the \verb-.xyz- and \verb-.nxy- files for graphene, the program will create them in the last scenarion. Even though creating these files for graphene is not a hard task with a little thinking and maybe a drawing on a piece of paper. Below we show a possible form for graphene's \verb-.xyz- and \verb-.nxy- files.\\
 \verb-graphene.xyz-:
 \begin{verbatim}
 2
@@ -471,7 +484,7 @@ C  0.67  0.67  0.00
 0  1  0  0 -1  0
 \end{verbatim}
 
-It it worth to remember that the \verb-.fev- and \verb-.nxy- have very simple forms, as represented below.\\
+It it worth to remember that the \fev~and \verb-.nxy- have very simple forms, as represented below.\\
 \verb-graphene.fev-:
 \begin{verbatim}
 1    3    2
@@ -493,7 +506,7 @@ T      T      T      T      T      T
 T      F      F      F      F      F
 \end{verbatim}
 
-If the target system listed on the \verb-inp- file is labelled as \verb-graphene- or simply \verb-6-, the \verb-fcs2xyz- tool will produce sample \verb-.fev-, \verb-.flg-, \verb-.fcs-, \verb-.b.fcs-, \verb-.nxy-, and \verb-.xyz- files for the graphene structure, as well as a \verb-.svg- and a \verb-.pdf- with the corresponding structure drawing.
+If the target system listed on the \verb-inp- file is labelled as \verb-graphene- or simply \verb-6-, the \verb-fcs2xyz- tool will produce sample \fev, \flg, \fcs, \fcsb, \verb-.nxy-, and \verb-.xyz- files for the graphene structure, as well as a \verb-.svg- and a \verb-.pdf- with the corresponding structure drawing.
 
 Below we reproduce the pdf images generater for structures with up to 3 faces.
 
@@ -503,5 +516,8 @@ Below we reproduce the pdf images generater for structures with up to 3 faces.
 \caption{Output pdf images for the coordinates generated for the systems with up to 3 faces.}
 \label{xyz-examples}
 \end{figure}
+
+\section{Files generation from coordinates}
+Suppose you have the \verb-.xyz- file with the coordinates of a system and a \verb-.lat- file with the two lattice vectors, one per line. You can use \verb-flg4xyz- to generate the corresponding \fev, \flgb, \flg, \fcsb, \fcs~files for that system. This is an alternative way to generate files for a particular system by using \verb-\flg2fev-.
 
 \end{document}
