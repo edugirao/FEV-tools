@@ -22,4 +22,4 @@
 - The fev2pov, fcs2pov, and flg2pov tools were merged into fev2pov, which now looks first for the embedding-tensor file, in its absence looks for flag-graph files, and then, in their absence, looks for faces-info files.
 - The fev2pov tool also produces individual .pov files for each "face-slice" of the embedding-tensor.
 - Fixed a bug when writing .xyz files in fcs2xyz.
-
+- Inclusion of the flg4xyz tool
