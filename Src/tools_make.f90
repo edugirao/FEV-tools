@@ -150,6 +150,7 @@ INTEGER:: nv,nf,RR(2)                                                        !!!
 INTEGER,ALLOCATABLE:: face_edges(:,:),face_verts(:,:),nface(:)               !!!
 INTEGER:: vpassed(nv),epassed(ne),neigh(nv,3),cell(nv,3,2)                   !!!
 INTEGER:: nedge(nv,3),i_f,ii_last                                            !!!
+LOGICAL:: cancel                                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 nf=nv/2                                                                      !!!
 ALLOCATE(nface(nf),face_edges(nf,3*nv),face_verts(nf,3*nv))                  !!!
@@ -185,6 +186,7 @@ DO i=1,nv                                                                    !!!
     nface(i_f)=1                                                             !!!
     ii=i ! Edge merging from this vertex                                     !!!
     jj=j ! Edge arriving at this neighbor                                    !!!
+    cancel=.false. ! Starting cancel check as false                          !!!
     DO                                                                       !!!
       ! New emerging vertex (l)                                              !!!
       jj=jj+1          ! Next (cyclic) ii's neigh...                         !!!
@@ -209,6 +211,11 @@ DO i=1,nv                                                                    !!!
       ! Updating times passed by vertices                                    !!!
       vpassed(l)=vpassed(l)+1   ! Emerging vertex                            !!!
       vpassed(ii)=vpassed(ii)+1 ! Arriving neighbor                          !!!
+      ! Checking if passed too much                                          !!!
+      IF((vpassed(l).eq.7).or.(epassed(ii).eq.3))THEN                        !!!
+        cancel=.true.                                                        !!!
+        EXIT                                                                 !!!
+      END IF                                                                 !!!
       ! Moving emerging vertex from l to ii                                  !!!
       ii=l                                                                   !!!
       ! Updating Bravais                                                     !!!
@@ -216,6 +223,19 @@ DO i=1,nv                                                                    !!!
       ! Check for closed face                                                !!!
       IF((ii.eq.ii_last).AND.(SUM(RR**2).eq.0)) EXIT                         !!!
     END DO                                                                   !!!
+    ! Checking cancel-case                                                   !!!
+    IF(cancel)THEN                                                           !!!
+      DO ll=1,nface(i_f)                                                     !!!
+        vpassed(face_verts(i_f,ll))=vpassed(face_verts(i_f,ll))-1            !!!
+        epassed(face_edges(i_f,ll))=epassed(face_edges(i_f,ll))-1            !!!
+      END DO                                                                 !!!
+      nface(i_f)=0                                                           !!!
+      i_f=i_f-1                                                              !!!
+      CYCLE                                                                  !!!
+    END IF                                                                   !!!
+    ! Not cancelled? -> Print face data                                      !!!
+    print*,nface(i_f),'e',face_edges(i_f,1:nface(i_f))                       !!!
+    print*,nface(i_f),'v',face_verts(i_f,1:nface(i_f))                       !!!
   END DO                                                                     !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -226,7 +246,7 @@ END SUBROUTINE faces_maker                                                   !!!
 SUBROUTINE flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag,neigh_flag,flag_color)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,k,l,l1,l2,nf,nv,nflags                                         !!!
+INTEGER:: i,j,k,l,l1,l2,nf,nv,nflags                               !!!
 INTEGER:: face_edges(nf,3*nv),face_verts(nf,3*nv),nface(nf)                  !!!
 INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
 LOGICAL:: getout                                                             !!!
@@ -236,7 +256,6 @@ nflags=nv*6                                                                  !!!
 ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags))             !!!
 flag=0                                                                       !!!
 neigh_flag=0                                                                 !!!
-flag_color=0                                                                 !!!
 l=0                                                                          !!!
 DO i=1,nf                                                                    !!!
   l1=l+1                                                                     !!!
@@ -295,6 +314,7 @@ DO                                                                           !!!
     IF(done(i)) CYCLE                                                        !!!
     IF(ok(i))THEN                                                            !!!
       flag_color(neigh_flag(i,:))=-flag_color(i)                             !!!
+      ok(neigh_flag(i,:))=.true.                                             !!!
       done(i)=.true.                                                         !!!
       getout=.false.                                                         !!!
     END IF                                                                   !!!
@@ -303,6 +323,41 @@ DO                                                                           !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE flg_maker                                                     !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE rflg_maker(nv,nflags,flag,neigh,cell,nedge,a1,a2,r,rflag,fcell)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: k,l,nv,nflags,i_v,i_e,m,s                               !!!
+INTEGER,INTENT(IN),OPTIONAL:: neigh(nv,3),nedge(nv,3),cell(nv,3,2)           !!!
+INTEGER,ALLOCATABLE:: flag(:,:)                !!!
+INTEGER,ALLOCATABLE,INTENT(OUT),OPTIONAL:: fcell(:,:,:)                      !!!
+REAL(KIND=8):: v(3),u(3),dv(3),d                                             !!!
+REAL(KIND=8),ALLOCATABLE,INTENT(OUT),OPTIONAL:: rflag(:,:)                   !!!
+REAL(KIND=8),INTENT(IN),OPTIONAL:: r(nv,3),a1(3),a2(3)                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ALLOCATE(rflag(nflags,3),fcell(nflags,3,2))                                  !!!
+fcell=0
+DO l=1,nflags                                                            !!!
+  s=1
+  IF(MOD(l,2).eq.1) s=-1
+  i_v=flag(l,3)
+  v=r(i_v,:)
+  i_e=flag(l,2)
+  DO m=1,3
+    IF(nedge(i_v,m).eq.i_e) k=m
+  END DO
+  dv=r(neigh(i_v,k),:)+cell(i_v,k,1)*a1+cell(i_v,k,2)*a2-v
+  d=DSQRT(SUM(dv**2))
+  u(1)=-dv(2)/d
+  u(2)=dv(1)/d
+  u(3)=0.0D0
+  rflag(l,:)=v+0.3*dv+s*(0.3*d/DSQRT(3.0D0))*u
+  fcell(l,3,:)=cell(i_v,k,:)
+END DO                                                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE rflg_maker                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
