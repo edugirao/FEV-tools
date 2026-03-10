@@ -22,10 +22,11 @@ flg2pri_D = tools_read tools_writ tools_maps tools_flag tools_conv
 flg2sym_D = tools_read tools_writ tools_symm tools_maps tools_conv
 flg4xyz_D = tools_read tools_writ tools_conv tools_make tools_maps
 for2bin_D = tools_read tools_writ
+flg2svg_D = tools_read tools_make tools_msvg
 
 # 2. Targets
 PROGS = fcs2fev fcs2flg fcs2gen fcs2smb fcs2xyz fev2fcs fev2flg \
-        fev2pov fev2sum flg2fcs flg2fev flg2iso flg2pri flg2sym flg4xyz for2bin
+        fev2pov fev2sum flg2fcs flg2fev flg2iso flg2pri flg2sym flg4xyz for2bin flg2svg
 EXES  = $(patsubst %,$(BIN_DIR)/%,$(PROGS))
 
 all: $(EXES)
@@ -48,6 +49,7 @@ $(OBJ_DIR)/flg2pri.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2pri_D)))
 $(OBJ_DIR)/flg2sym.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2sym_D)))
 $(OBJ_DIR)/flg4xyz.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg4xyz_D)))
 $(OBJ_DIR)/for2bin.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(for2bin_D)))
+$(OBJ_DIR)/flg2svg.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2svg_D)))
 
 # 4. Linking Rules
 # Using $*_D to pull in the correct objects for the linker
