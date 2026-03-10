@@ -25,4 +25,4 @@
 - Inclusion of the flg4xyz tool, which creates .flg, .fcs, and .fev files of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
 - Inclusion of the flg4svg tool, which creates an .svg file illustrating the glag-graph of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
 - The fcs2kid tool was renamed to fcs2gen.
--  
+-  Inclusion of the flg2svg tool, which creates an illustration for the flag-graph of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
