@@ -5,23 +5,25 @@ Fortran-written collection of tools to work with embedding tensors representing 
 It deals with a simple .fev format for the tensor and with the related .flg/.fcs formats associated with more complex entities describing the 3-regular graphs (flag graph/faces info set).
 
 The following tools perform simple conversions for the .fev, .flg, and .fcs formats:
-- fev2flg
-- fev2fcs
-- flg2fev
-- flg2fcs
-- fcs2fev
-- fcs2flg
- 
+- fev2flg - embedding-tensor to flag-graph
+- fev2fcs - embedding-tensor to faces-info
+- flg2fev - flag-graph to embedding-tensor
+- flg2fcs - flag-graph to faces-info
+- fcs2fev - faces-info to embedding-tensor
+- fcs2flg - faces-info to flag-graph
+- for2bin - binary from/to formatted conversion
+    
 In addition, the following tools perform specific tasks:
-- fev2sum - sum rules computation
 - fev2pov - tensor illustration 
-- flg2sym - symmetry check
+- fev2sum - sum rules computation
 - flg2iso - isomorphism check
-- flg2pri - reduction to primitive cell
-- fcs2kid - structure generation 
-- fcs2xyz - coordinates generation 
-- fcs2smb - polygonal symbol generation 
-- for2bin - binary from/to formatted conversion 
+- flg2pri - reduction to the primitive cell
+- flg2svg - flag-graph illustration
+- flg2sym - symmetry check
+- fcs2gen - structure generation 
+- fcs2smb - polygonal symbol generation
+- fcs2xyz - coordinates generation
+- flg4xyz - files generation from coordinates
 
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide and an Examples folder containing the .fev files of a few illustrative structures (along with the corresponding files for the coordinates and lattice vectors).
 
@@ -36,3 +38,4 @@ The team is formed by:
 - Eduardo Costa Girão (who maintains the Fortran software);
 - Lilac Macmillan (who maintains the Python software);
 - Vincent Meunier (project manager).
+
