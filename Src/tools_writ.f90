@@ -297,16 +297,17 @@ END SUBROUTINE write_mir                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_graphene(fev,flg,fcs,nxy,xyz,gen)                           !!!
+SUBROUTINE write_graphene(filename,fev,flg,fcs,nxy,xyz,gen)                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: u,fev,flg,fcs,nxy,xyz,gen                                          !!!
+CHARACTER(LEN=*):: filename                                                     !!!
 LOGICAL:: tru,fal                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 tru=.true.                                                                   !!!
 fal=.false.                                                                  !!!
 IF(fev.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE='6.fev')                                               !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fev')                       !!!
   WRITE(u,*) '1    3    2'                                                   !!!
   WRITE(u,*) '1'                                                             !!!
   WRITE(u,*) '1'                                                             !!!
@@ -318,7 +319,7 @@ IF(fev.ne.0)THEN                                                             !!!
   CLOSE(UNIT=u)                                                              !!!
 END IF                                                                       !!!
 IF(flg.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE='6.flg')                                               !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg')                       !!!
   WRITE(u,*) '12    1    3    2'                                             !!!
   WRITE(u,*) '6'                                                             !!!
   WRITE(u,*) '1      1      1      2      6      8      1'                   !!!
@@ -335,7 +336,7 @@ IF(flg.ne.0)THEN                                                             !!!
   WRITE(u,*) '1      3      2     11      7      5     -1'                   !!!
   WRITE(u,*)                                                                 !!!
   CLOSE(UNIT=u)                                                              !!!
-  OPEN(NEWUNIT=u,FILE='6.b.flg',FORM='UNFORMATTED')                          !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED')  !!!
   WRITE(u) 12,1,3,2                                                          !!!
   WRITE(u) 6                                                                 !!!
   WRITE(u) 1,1,1, 2, 6, 8, 1                                                 !!!
@@ -353,7 +354,7 @@ IF(flg.ne.0)THEN                                                             !!!
   CLOSE(UNIT=u)                                                              !!!  
 END IF                                                                       !!!
 IF(fcs.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE='6.fcs')                                               !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs')                       !!!
   WRITE(u,*) '1    3    2    6'                                              !!!
   WRITE(u,*) '6  T'                                                          !!!
   WRITE(u,*) '1      1      1      1      1      1'                          !!!
@@ -363,7 +364,7 @@ IF(fcs.ne.0)THEN                                                             !!!
   WRITE(u,*) 'T      F      F      F      F      F'                          !!!
   WRITE(u,*)                                                                 !!!
   CLOSE(UNIT=u)                                                              !!!
-  OPEN(NEWUNIT=u,FILE='6.b.fcs',FORM='UNFORMATTED')                          !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')  !!!
   WRITE(u) 1,3,2,6                                                           !!!
   WRITE(u) 6,tru                                                             !!!
   WRITE(u) 1,1,1,1,1,1                                                       !!!
@@ -374,7 +375,7 @@ IF(fcs.ne.0)THEN                                                             !!!
   CLOSE(UNIT=u)                                                              !!!
 END IF                                                                       !!!
 IF(nxy.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE='6.nxy')                                               !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.nxy')                       !!!
   WRITE(u,*) '6'                                                             !!!
   WRITE(u,*) '0      0     -1      0      0      1'                          !!!
   WRITE(u,*) '0      1      0      0     -1      0'                          !!!
@@ -382,7 +383,7 @@ IF(nxy.ne.0)THEN                                                             !!!
   CLOSE(UNIT=u)                                                              !!!
 END IF                                                                       !!!
 IF(xyz.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE='6.xyz')                                               !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                       !!!
   WRITE(u,*) '2'                                                             !!!
   WRITE(u,*)                                                                 !!!
   WRITE(u,*) 'C  0.37  0.37  0.00'                                           !!!

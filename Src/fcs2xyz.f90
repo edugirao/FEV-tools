@@ -5,6 +5,7 @@ PROGRAM fcs2xyz                                                              !!!
 ! Converts a .fcs or a .b.fcs file to .xyz and .pdf formats.                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 USE tools_coor                                                               !!!
+USE tools_relx                                                               !!!
 USE tools_read                                                               !!!
 USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
@@ -35,7 +36,7 @@ CALL read_anc_list(nf,filename_target,filename_list,i0)                      !!!
 ! Taking care of graphene if the first in the ancestor list                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IF(i0.eq.1)THEN                                                              !!!
-  CALL write_graphene(1,1,1,1,1,0)                                           !!!
+  CALL write_graphene(filename_list(1),0,0,1,1,1,0)                          !!!
   CALL make_graphene(i0,filename_list(1))                                    !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
