@@ -6,7 +6,7 @@ CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE reordering_fcs(nf,ne,nv,nmax,nface,f_in_f,e_in_f,v_in_f,f2f,v2v,ie2,inv)
+SUBROUTINE reordering_fcs(nf,ne,nv,nmax,nface,f_in_f,e_in_f,v_in_f,b_in_f,f2f,e2e,v2v,ie2,inv)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Subroutine to                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -16,10 +16,11 @@ INTEGER:: f3,e0,e3,e4,v5,v6,ne,nv,nf,nmax                                    !!!
 INTEGER:: e2e(ne),v2v(nv),f2f(nf)                                            !!!
 INTEGER:: f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf)          !!!
 INTEGER:: f_in_f2(nf,nmax),e_in_f2(nf,nmax),v_in_f2(nf,nmax),nface2(nf)      !!!
+LOGICAL:: b_in_f(nf,nmax)                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Getting relevant elements (includes eventually reversing F0)               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL get_deleted_elements(nf,nmax,nface,f_in_f,e_in_f,v_in_f,f3,e0,e3,e4,v5,v6,ie2,inv)
+CALL get_deleted_elements(nf,nmax,nface,f_in_f,e_in_f,v_in_f,b_in_f,f3,e0,e3,e4,v5,v6,ie2,inv)
 ! Which extracted elements appear first                                      !!!
 e00=e0                                                                       !!!
 e33=e3                                                                       !!!
@@ -110,7 +111,7 @@ END SUBROUTINE reordering_fcs                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE get_deleted_elements(nf,nmax,nface,f_in_f,e_in_f,v_in_f,f3,e0,e3,e4,v5,v6,ie2,inv)
+SUBROUTINE get_deleted_elements(nf,nmax,nface,f_in_f,e_in_f,v_in_f,b_in_f,f3,e0,e3,e4,v5,v6,ie2,inv)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Subroutine to                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -118,14 +119,45 @@ IMPLICIT NONE                                                                !!!
 INTEGER:: nf,nmax,f0,f3,e0,e3,e4,v5,v6,inv,i,ie0,ie2,j                       !!!
 INTEGER:: f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf)          !!!
 INTEGER:: f_in_f2(nmax),e_in_f2(nmax),v_in_f2(nmax)                          !!!
+LOGICAL:: bridge,b_in_f(nf,nmax)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! We choose F3 to be a face smaller than a hexagon                           !!!
 f3=0                                                                         !!!
+! Preferably a triangle
 DO i=1,nf                                                                    !!!
-  IF(nface(i).lt.6)THEN                                                      !!!
+  IF(nface(i).eq.3)THEN                                                      !!!
     f3=i                                                                     !!!
+    EXIT
   END IF                                                                     !!!
 END DO                                                                       !!!
+! If not a triangle, look for a square or pentagon
+IF(f3.eq.0)THEN
+  DO i=1,nf                                                                    !!!
+    IF(nface(i).lt.6)THEN                                                      !!!
+      f3=i                                                                     !!!
+      EXIT
+    END IF                                                                     !!!
+  END DO                                                                       !!!
+END IF
+! Not a triangle/square/pentagon? Look for a hexagon with no bridges         !!!
+IF(f3.eq.0)THEN
+  DO i=1,nf                                                                    !!!
+    IF(nface(i).eq.6)THEN   ! Check each hexagon                                                   !!!
+      bridge=.false.        ! In principle, no bridges
+      DO j=1,6              ! Search for bridges inside the hexagon
+        IF(b_in_f(i,j))THEN ! Found a bridge?
+          bridge=.true.     ! Update the logical variable
+          EXIT              ! and leave. 
+        END IF
+      END DO
+      ! Verifying if no bridge
+      IF(.not.bridge)THEN 
+        f3=i                                                                     !!!
+        EXIT
+      END IF  
+    END IF                                                                     !!!
+  END DO                                                                       !!!
+END IF
 IF(f3.eq.0) STOP 'F3 not found.'                                             !!!
 ! We choose E0 to be the one before last edge in F3                          !!!
 e0=e_in_f(f3,nface(f3)-1)                                                    !!!
@@ -272,7 +304,7 @@ DO i=1,nf1-1 ! Going all child's faces, except F3                            !!!
   END IF                                                                     !!!
   ! Faces not involved in dimer deletion                                     !!!
   CALL build_other_faces(nf0,nmax0,nface0,e_in_f0,v_in_f0, &                 !!!
-                           & nf1,nmax1,nface1,e_in_f1,v_in_f1,f0,f1,f2,l)    !!!
+                           & nf1,nmax1,nface1,e_in_f1,v_in_f1,i,f0,f1,f2,l)    !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Refactoring nmax0                                                          !!!
@@ -433,6 +465,26 @@ END SUBROUTINE build_f12                                                     !!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE build_other_faces(nf0,nmax0,nface0,e_in_f0,v_in_f0, &
+                           & nf1,nmax1,nface1,e_in_f1,v_in_f1,i,f0,f1,f2,l)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Subroutine to                                                              !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: i,nf0,nf1,nmax0,nmax1,f0,f1,f2,f3,l                                !!!
+INTEGER:: nface0(nf0),e_in_f0(nf0,nmax0),v_in_f0(nf0,nmax0)                  !!!
+INTEGER:: nface1(nf1),e_in_f1(nf1,nmax1),v_in_f1(nf1,nmax1)                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Copy face child face i to parent face l                                  !!!
+l=l+1                                                                      !!!
+nface0(l)=nface1(i)       ! uneq_face1,f_in_f1, b_in_f1 & u_in_f1 later    !!!
+e_in_f0(l,1:nface0(l))=e_in_f1(i,1:nface0(l))                              !!!
+v_in_f0(l,1:nface0(l))=v_in_f1(i,1:nface0(l))                              !!!    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE build_other_faces                                             !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE build_other_faces2(nf0,nmax0,nface0,e_in_f0,v_in_f0, &
                            & nf1,nmax1,nface1,e_in_f1,v_in_f1,f0,f1,f2,l)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Subroutine to                                                              !!!
@@ -455,7 +507,7 @@ DO i=1,nf1                                                                   !!!
   v_in_f0(l,1:nface0(l))=v_in_f1(i,1:nface0(l))                              !!!    
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE build_other_faces                                             !!!
+END SUBROUTINE build_other_faces2                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -192,7 +192,7 @@ IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,l,nflags,flag(nflags,3),f1,f2,e1,e2,nmaps                      !!!
 INTEGER:: nf,nface(nf),mapa(nflags),ne,nmax,e_in_f(nf,nmax)                  !!!
 INTEGER:: Fadj(nf,nf),Eadj(ne,ne),maps(nmaps,nflags)                         !!!
-LOGICAL:: uneq_face(nf),u_in_f(nf,nmax)                                      !!!
+LOGICAL,INTENT(OUT):: uneq_face(nf),u_in_f(nf,nmax)                                      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 uneq_face=.true.                                                             !!!
 u_in_f=.true.                                                                !!!

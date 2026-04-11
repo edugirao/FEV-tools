@@ -389,6 +389,8 @@ v6=nv0+2                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating child .nxy data                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(ALLOCATED(x_in_f1)) stop 'aaaaaaa'
+IF(ALLOCATED(y_in_f1)) stop 'aaaaaaa'
 ALLOCATE(x_in_f1(nf1,nmax1),y_in_f1(nf1,nmax1))                              !!!
 x_in_f1=0                                                                    !!!
 y_in_f1=0                                                                    !!!
@@ -430,6 +432,7 @@ CALL f3_nxy(f3,f0,ie1,ie2,nface0(f0),nmax0,nf0,rf,e1,e2,e_in_f0,x_in_f0,y_in_f0,
 ! Creating child structure                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Allocating child structure                                                 !!!
+IF(ALLOCATED(rk)) stop 'aaaaaaa'
 ALLOCATE(rk(nv1,2))                                                          !!!
 ! Copying parent structure                                                   !!!
 rk(1:nv0,:)=rp                                                               !!!

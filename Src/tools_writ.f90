@@ -161,7 +161,7 @@ WRITE(u) nface                                                               !!!
 WRITE(u) flag                                                                !!!
 WRITE(u) neigh_flag                                                          !!!
 WRITE(u) flag_color                                                          !!!
-CLOSE(UNIT=3)                                                                !!!
+CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_flg                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -386,7 +386,7 @@ IF(xyz.ne.0)THEN                                                             !!!
   OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                       !!!
   WRITE(u,*) '2'                                                             !!!
   WRITE(u,*)                                                                 !!!
-  WRITE(u,*) 'C  0.37  0.37  0.00'                                           !!!
+  WRITE(u,*) 'C  0.37  0.37  0.00'                                           !!!  
   WRITE(u,*) 'C  0.67  0.67  0.00'                                           !!!
   WRITE(u,*)                                                                 !!!
   CLOSE(UNIT=u)                                                              !!!

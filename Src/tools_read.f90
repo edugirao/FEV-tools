@@ -531,6 +531,10 @@ INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
 IF(have_file_b)THEN                                                          !!!
   OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
   READ(u,IOSTAT=ios)  nf,ne,nv,nmax                                                     !!!
+  IF(ALLOCATED(f_in_f)) stop 'aaaaaaa'
+  IF(ALLOCATED(e_in_f)) stop 'aaaaaaa'
+  IF(ALLOCATED(v_in_f)) stop 'aaaaaaa'
+  IF(ALLOCATED(nface)) stop 'aaaaaaa'
   ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))        !!!
   DO i=1,nf                                                                  !!!
     READ(u,IOSTAT=ios) nface(i)!,uneq_face(i)                                           !!!
@@ -546,6 +550,10 @@ ELSE                                                                         !!!
   IF(have_file_f)THEN                                                        !!!
     OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
     READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                                  !!!
+    IF(ALLOCATED(f_in_f)) stop 'aaaaaaa'
+    IF(ALLOCATED(e_in_f)) stop 'aaaaaaa'
+    IF(ALLOCATED(v_in_f)) stop 'aaaaaaa'
+    IF(ALLOCATED(nface)) stop 'aaaaaaa'
     ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))      !!!    
     DO i=1,nf                                                                !!!
       READ(u,*,IOSTAT=ios) nface(i)!,uneq_face(i)                                       !!!
@@ -631,6 +639,8 @@ CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading x/y neighbor info from .nxy                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(ALLOCATED(x_in_f)) stop 'aaaaaaa'
+IF(ALLOCATED(y_in_f)) stop 'aaaaaaa'
 ALLOCATE(x_in_f(nf,nmax),y_in_f(nf,nmax))                                    !!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.nxy',STATUS='OLD',ACTION='READ',IOSTAT=ios)
 DO i=1,nf                                                                    !!!
@@ -655,6 +665,7 @@ CHARACTER*1:: atom                                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading xy structure from .xyz                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(ALLOCATED(r)) stop 'aaaaaaa'
 ALLOCATE(r(nv,2))                                                            !!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz',STATUS='OLD',ACTION='READ',IOSTAT=ios)
 READ(u,*,IOSTAT=ios) nv                                                      !!!
