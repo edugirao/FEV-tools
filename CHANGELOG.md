@@ -23,7 +23,6 @@
 - The fev2pov tool also produces individual .pov files for each "face-slice" of the embedding-tensor.
 - Fixed a bug when writing .xyz files in fcs2xyz.
 - Inclusion of the flg4xyz tool, which creates .flg, .fcs, and .fev files of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
-- Inclusion of the flg4svg tool, which creates an .svg file illustrating the glag-graph of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
 - The fcs2kid tool was renamed to fcs2gen.
 -  Inclusion of the flg2svg tool, which creates an illustration for the flag-graph of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
--  Inclusion of the fcs2coo tool, which creates the .xyz (rough initial guess) from a .fcs file just as fcs2xyz, with the difference that it does it without the need of obtaining the files after a structural generation using fcs2gen. It just gets a standalone .fcs file and generates the coordinates.
+-  Inclusion of the fcs2coo tool, which creates the .xyz (rough initial guess) from a .fcs file just as fcs2xyz, with the difference that it does it without the need of obtaining the files after a structural generation using fcs2gen. It just gets a standalone .fcs file and generates the coordinates. This tool is not operational yet in this version.
