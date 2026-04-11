@@ -17,6 +17,7 @@ fev2pov_D = tools_read tools_povr tools_conv
 fev2sum_D = tools_read tools_writ tools_rule tools_conv
 flg2fcs_D = tools_read tools_writ tools_conv tools_maps 
 flg2fev_D = tools_read tools_writ tools_conv 
+flg2gen_D = tools_read tools_writ tools_conv tools_maps tools_adim   
 flg2iso_D = tools_read tools_maps tools_conv
 flg2pri_D = tools_read tools_writ tools_maps tools_flag tools_conv
 flg2sym_D = tools_read tools_writ tools_symm tools_maps tools_conv
@@ -27,7 +28,7 @@ fcs2coo_D = tools_read tools_conv tools_maps tools_writ tools_adim tools_ddim to
 
 # 2. Targets
 PROGS = fcs2fev fcs2flg fcs2gen fcs2smb fcs2xyz fev2fcs fev2flg \
-        fev2pov fev2sum flg2fcs flg2fev flg2iso flg2pri flg2sym flg4xyz for2bin flg2svg fcs2coo
+        fev2pov fev2sum flg2gen flg2fcs flg2fev flg2iso flg2pri flg2sym flg4xyz for2bin flg2svg fcs2coo
 EXES  = $(patsubst %,$(BIN_DIR)/%,$(PROGS))
 
 all: $(EXES)
@@ -43,6 +44,7 @@ $(OBJ_DIR)/fev2fcs.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(fev2fcs_D)))
 $(OBJ_DIR)/fev2flg.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(fev2flg_D)))
 $(OBJ_DIR)/fev2pov.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(fev2pov_D)))
 $(OBJ_DIR)/fev2sum.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(fev2sum_D)))
+$(OBJ_DIR)/flg2gen.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2gen_D)))
 $(OBJ_DIR)/flg2fcs.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2fcs_D)))
 $(OBJ_DIR)/flg2fev.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2fev_D)))
 $(OBJ_DIR)/flg2iso.o: $(addprefix $(OBJ_DIR)/,$(addsuffix .o,$(flg2iso_D)))
