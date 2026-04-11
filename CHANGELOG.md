@@ -28,6 +28,6 @@
 -  Inclusion of the fcs2coo tool, which creates the .xyz (rough initial guess) from a .fcs file just as fcs2xyz, with the difference that it does it without the need to obtain the files after a structural generation using fcs2gen. It just gets a standalone .fcs file and generates the coordinates. This tool is not operational yet in this version.
 - Inclusion of the flg2gen tool, which does the same as fcs2gen, but works only with the .b.flg format instead of the .b.fcs one.
 - This is another version that ended up being launched just as a development intermediate for the actual version 1.1.
-- 
+
 ## v1.x.x (in development)
 - The .fcs/.b.fcs format (faces-info) has been discontinued. All the fcs-based tools now work with the .flg/.b.flg format (flag-graph) as input. So, fcs2gen became flg2gen, fcs2smb became flg2smb, fcs2xyz became flg2xyz, and fcs2coo became flg2coo. The fcs2fev, fcs2flg, fev2fcs, and flg2fcs tools were discontinued.
