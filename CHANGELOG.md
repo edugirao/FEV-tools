@@ -13,7 +13,7 @@
 - Inclusion of flg2sum, fcs2sum, flg2pov, fcs2pov, flg2smb, fcs2sym, fcs2pri, and fcs2iso tools.
 - In principle, this should be version 1.1, but it ended up being launched as a development intermediate for the actual version 1.1.
   
-## v1.x.x (in development)
+## v1.0.2 (11/Apr/2026)
 - Both flg2pri and fcs2pri tools were merged into flg2pri, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both flg2sym and fcs2sym tools were merged into flg2sym, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
 - Both flg2iso and fcs2iso tools were merged into flg2iso, which now looks first for flag-graph files and then, in their absence, looks for faces-info files.
@@ -25,5 +25,8 @@
 - Inclusion of the flg4xyz tool, which creates .flg, .fcs, and .fev files of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
 - The fcs2kid tool was renamed to fcs2gen.
 -  Inclusion of the flg2svg tool, which creates an illustration for the flag-graph of a structure from its coordinates (read from a .xyz file) and lattice vectors (read from a .lat file).
--  Inclusion of the fcs2coo tool, which creates the .xyz (rough initial guess) from a .fcs file just as fcs2xyz, with the difference that it does it without the need of obtaining the files after a structural generation using fcs2gen. It just gets a standalone .fcs file and generates the coordinates. This tool is not operational yet in this version.
-- Inclusion of the flg2gen tool, that does the same as fcs2gen, but works only with the .b.flg format instead of the .b.fcs one.
+-  Inclusion of the fcs2coo tool, which creates the .xyz (rough initial guess) from a .fcs file just as fcs2xyz, with the difference that it does it without the need to obtain the files after a structural generation using fcs2gen. It just gets a standalone .fcs file and generates the coordinates. This tool is not operational yet in this version.
+- Inclusion of the flg2gen tool, which does the same as fcs2gen, but works only with the .b.flg format instead of the .b.fcs one.
+
+## v1.x.x (in development)
+- 
