@@ -7,15 +7,15 @@ CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng,neigh_flag_set,flag_color_set)
+SUBROUTINE bipartition(nflags,flag,nf,nface,ng,flag_set)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,c1,c2,f,tmpsize                                                  !!!
-INTEGER:: nflags,flag_color(nflags),flag(nflags,3),ng,ncluster,nf            !!!
-INTEGER:: neigh_flag(nflags,3),neigh_flag2(nflags,3),flag_color2(nflags)     !!!
+INTEGER:: nflags,flag(nflags,-3:3),ng,ncluster,nf            !!!
+INTEGER:: flag2(nflags,-3:3)     !!!
 INTEGER:: cluster(nflags),cluster2(nflags),nface(nf)                         !!!
-INTEGER,ALLOCATABLE:: inv_bit(:),neigh_flag_set(:,:,:),flag_color_set(:,:)   !!!
-INTEGER,ALLOCATABLE:: neigh_flag_set2(:,:,:),flag_color_set2(:,:)            !!!
+INTEGER,ALLOCATABLE:: inv_bit(:),flag_set(:,:,:)  !!!
+INTEGER,ALLOCATABLE:: flag_set2(:,:,:)            !!!
 LOGICAL:: done,torus,endsearch                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Generating initial bipartition split                                       !!!
@@ -24,27 +24,25 @@ ncluster=0       ! Initially no clusters                                     !!!
 cluster=0                                                                    !!!
 DO                                                                           !!!
   ! Starter engine                                                           !!!
-  CALL bipartition_nucleation(ncluster,nflags,flag_color,cluster)            !!!
+  CALL bipartition_nucleation(ncluster,nflags,flag,cluster)            !!!
   ! Adding as much flags as possible to the bipartition                      !!!
-  CALL bipartition_add(nflags,flag_color,neigh_flag,ncluster,cluster,done)   !!!
+  CALL bipartition_add(nflags,flag,ncluster,cluster,done)   !!!
   IF(done) EXIT                                                              !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Adding missing intra-cluster bipartition connections                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL wrap_clusters(nflags,flag,flag_color,neigh_flag,cluster)                !!!
+CALL wrap_clusters(nflags,flag,cluster)                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Adding missing inter-cluster bipartition connections                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 tmpsize=1                                                                    !!!
-ALLOCATE(neigh_flag_set(tmpsize,nflags,3),flag_color_set(tmpsize,nflags))    !!!
+ALLOCATE(flag_set(tmpsize,nflags,-3:3))    !!!
 IF(ncluster.eq.1)THEN                                                        !!!
   ng=1                                                                       !!!
-  neigh_flag_set(ng,:,:)=neigh_flag                                          !!!
-  flag_color_set(ng,:)=flag_color                                            !!!
+  flag_set(ng,:,:)=flag                                          !!!
 ELSE IF(ncluster.gt.1)THEN                                                   !!!
-  neigh_flag2=0                                                              !!!
-  flag_color2=0                                                              !!!
+  flag2=0                                                              !!!
   cluster2=0                                                                 !!!
   ng=0                                                                       !!!
   ALLOCATE(inv_bit(ncluster-1))                                              !!!
@@ -52,39 +50,35 @@ ELSE IF(ncluster.gt.1)THEN                                                   !!!
   endsearch=.false.                                                          !!!
   DO                                                                         !!!
     ! Setting temporary trial variables                                      !!!
-    neigh_flag2=neigh_flag                                                   !!!
-    flag_color2=flag_color                                                   !!!
+    flag2=flag                                                   !!!
     cluster2=cluster                                                         !!!
     ! Merging clusters into one, one-at-a-time                               !!!
     DO i=1,ncluster-1                                                        !!!
       ! Look for neighbor clusters by inter-cluster pair of v-neighbor flags !!!
-      CALL intercluster_vneigh_flags(nflags,neigh_flag2,cluster2,flag,c1,c2) !!!
+      CALL intercluster_vneigh_flags(nflags,cluster2,flag2,c1,c2) !!!
       IF(c1.eq.0) EXIT                                                       !!!
       ! Need for inversion?                                                  !!!
       DO f=1,nflags                                                          !!!
-        IF(cluster2(f).eq.c2) flag_color2(f)=inv_bit(i)*flag_color2(f)       !!!
+        IF(cluster2(f).eq.c2) flag2(f,0)=inv_bit(i)*flag(f,0)       !!!
       END DO                                                                 !!!
       ! Merging the clusters                                                 !!!
       DO f=1,nflags                                                          !!!
         IF(cluster2(f).eq.c2) cluster2(f)=c1                                 !!!
       END DO                                                                 !!!
       ! Making missing connections inside the new cluster                    !!!
-      CALL wrap_clusters(nflags,flag,flag_color2,neigh_flag2,cluster2)       !!!
+      CALL wrap_clusters(nflags,flag2,cluster2)       !!!
     END DO                                                                   !!!
     ! Toriodal test                                                          !!!
-    CALL toroidal_test(nflags,neigh_flag2,torus,nf,nface,flag)               !!!
+    CALL toroidal_test(nflags,torus,nf,nface,flag2)               !!!
     IF(torus)THEN                                                            !!!
       ng=ng+1                                                                !!!
       IF(ng.gt.tmpsize)THEN                                                  !!!
-        ALLOCATE(neigh_flag_set2(2*tmpsize,nflags,3),flag_color_set2(2*tmpsize,nflags))
-        neigh_flag_set2(1:tmpsize,:,:)=neigh_flag_set                        !!!
-        flag_color_set2(1:tmpsize,:)=flag_color_set                          !!!
-        CALL MOVE_ALLOC(neigh_flag_set2,neigh_flag_set)                      !!!
-        CALL MOVE_ALLOC(flag_color_set2,flag_color_set)                      !!!
+        ALLOCATE(flag_set2(2*tmpsize,nflags,-3:3))
+        flag_set2(1:tmpsize,:,:)=flag_set                        !!!
+        CALL MOVE_ALLOC(flag_set2,flag_set)                      !!!
         tmpsize=2*tmpsize                                                    !!!
       END IF                                                                 !!!
-      neigh_flag_set(ng,:,:)=neigh_flag2                                     !!!
-      flag_color_set(ng,:)=flag_color2                                       !!!
+      flag_set(ng,:,:)=flag2                                     !!!
     END IF                                                                   !!!
     ! Updating bit structure if not torus                                    !!!
     DO i=1,ncluster-1                                                        !!!
@@ -106,17 +100,17 @@ END SUBROUTINE bipartition                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE bipartition_nucleation(ncluster,nflags,flag_color,cluster)        !!!
+SUBROUTINE bipartition_nucleation(ncluster,nflags,flag,cluster)        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,nflags,flag_color(nflags),ncluster,cluster(nflags)               !!!
+INTEGER:: i,nflags,flag(nflags,-3:3),ncluster,cluster(nflags)               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Updating number of clusters                                                !!!
 ncluster=ncluster+1                                                          !!!
 ! Starting the cluster with the first non-ok flag                            !!!
 DO i=1,nflags                                                                !!!
   IF(cluster(i).eq.0)THEN                                                    !!!
-    flag_color(i)=1  ! We start coloring...                                  !!!
+    flag(i,0)=1  ! We start coloring...                                  !!!
     cluster(i)=ncluster                                                      !!!
     EXIT                                                                     !!!
   END IF                                                                     !!!
@@ -126,11 +120,11 @@ END SUBROUTINE bipartition_nucleation                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE bipartition_add(nflags,flag_color,neigh_flag,ncluster,cluster,done)
+SUBROUTINE bipartition_add(nflags,flag,ncluster,cluster,done)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,jj,l,nflags                                                    !!!
-INTEGER:: neigh_flag(nflags,3),flag_color(nflags),ncluster,cluster(nflags)   !!!
+INTEGER:: flag(nflags,-3:3),ncluster,cluster(nflags)   !!!
 LOGICAL:: done,candidate                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DO                                                                           !!!
@@ -143,12 +137,12 @@ DO                                                                           !!!
       done=.false. ! Found a non-added, so we are not done yet               !!!
       ! Look for an added atom from the i-neighbors                          !!!
       DO j=1,3                                                               !!!
-        IF(neigh_flag(i,j).eq.0) CYCLE                                       !!!
-        jj=neigh_flag(i,j)                                                   !!!
+        IF(flag(i,-j).eq.0) CYCLE                                       !!!
+        jj=flag(i,-j)                                                   !!!
         IF(cluster(jj).ne.0)THEN           ! If we find it:                  !!!
           l=i                              ! Mark the added atom             !!!
           candidate=.true.                 ! Remark we have a candidate      !!!
-          flag_color(i)=-flag_color(jj)    ! Set its color                   !!!
+          flag(i,0)=-flag(jj,0)    ! Set its color                   !!!
           cluster(i)=ncluster              ! Add to the cluster              !!!
           EXIT                             ! Exit the search                 !!!
         END IF                                                               !!!
@@ -166,24 +160,24 @@ END SUBROUTINE bipartition_add                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE wrap_clusters(nflags,flag,flag_color,neigh_flag,cluster)          !!!
+SUBROUTINE wrap_clusters(nflags,flag,cluster)          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: f1,f2,nflags,flag_color(nflags),flag(nflags,3)                     !!!
-INTEGER:: cluster(nflags),neigh_flag(nflags,3)                               !!!
+INTEGER:: f1,f2,nflags,flag(nflags,-3:3)                     !!!
+INTEGER:: cluster(nflags)                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Look for 1st flag with no v-neighbor                                       !!!
 DO f1=1,nflags                                                               !!!
-  IF(neigh_flag(f1,3).ne.0) CYCLE                                            !!!
+  IF(flag(f1,-3).ne.0) CYCLE                                            !!!
   ! Look for 2nd flag with no v-neighbor                                     !!!
   DO f2=f1+1,nflags                                                          !!!
-    IF(neigh_flag(f2,3).ne.0) CYCLE                                          !!!
+    IF(flag(f2,-3).ne.0) CYCLE                                          !!!
     IF(cluster(f2).ne.cluster(f1)) CYCLE                                     !!!
     ! Cheking if v-neighbors                                                 !!!
     IF((flag(f1,1).eq.flag(f2,1)).AND.(flag(f1,2).eq.flag(f2,2)).AND.(flag(f1,3).ne.flag(f2,3)))THEN
-      IF(flag_color(f1)*flag_color(f2).eq.-1)THEN                            !!!
-        neigh_flag(f1,3)=f2                                                  !!!
-        neigh_flag(f2,3)=f1                                                  !!!
+      IF(flag(f1,0)*flag(f2,0).eq.-1)THEN                            !!!
+        flag(f1,-3)=f2                                                  !!!
+        flag(f2,-3)=f1                                                  !!!
       END IF                                                                 !!!
     END IF                                                                   !!!
   END DO                                                                     !!!
@@ -193,21 +187,21 @@ END SUBROUTINE wrap_clusters                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE intercluster_vneigh_flags(nflags,neigh_flag,cluster,flag,c1,c2)   !!!
+SUBROUTINE intercluster_vneigh_flags(nflags,cluster,flag,c1,c2)   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: f1,f2,nflags,flag(nflags,3),c1,c2                                  !!!
-INTEGER:: cluster(nflags),neigh_flag(nflags,3)                               !!!
+INTEGER:: f1,f2,nflags,flag(nflags,-3:3),c1,c2                                  !!!
+INTEGER:: cluster(nflags)                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Look for an inter-cluster pair of v-neighbor flags                         !!!
 c1=0                                                                         !!!
 c2=0                                                                         !!!
 DO f1=1,nflags                                                               !!!
   ! Search for 1st flag with no v-neighbor                                   !!!
-  IF(neigh_flag(f1,3).gt.0) CYCLE                                            !!!
+  IF(flag(f1,-3).gt.0) CYCLE                                            !!!
   DO f2=f1+1,nflags                                                          !!!
     ! Search for 2nd flag with no v-neighbor                                 !!!
-    IF(neigh_flag(f2,3).gt.0) CYCLE                                          !!!
+    IF(flag(f2,-3).gt.0) CYCLE                                          !!!
     ! Cheking if inter-clusters                                              !!!
     IF(cluster(f1).eq.cluster(f2)) CYCLE                                     !!!
     ! Cheking if v-neighbors                                                 !!!
@@ -222,18 +216,18 @@ END SUBROUTINE intercluster_vneigh_flags                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE toroidal_test(nflags,neigh_flag,torus,nf,nface,flag)              !!!
+SUBROUTINE toroidal_test(nflags,torus,nf,nface,flag)              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,m,nflags,ncluster,nf_test,nf,f                                 !!!
 INTEGER:: cluster(nflags),nface(nf),nface3(nf),nface2(nf)                    !!!
-INTEGER:: neigh_flag(nflags,3),Adj(nflags,nflags),flag(nflags,3)             !!!
+INTEGER:: Adj(nflags,nflags),flag(nflags,-3:3)             !!!
 LOGICAL:: ok(nflags),torus,done!,nface_test(nf)                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Look for an inter-cluster pair of v-neighbor flags                         !!!
 Adj=0                                                                        !!!
 DO i=1,nflags ! we are excluding the face-neighs to have only the...         !!!
-  Adj(i,neigh_flag(i,2:3))=1  ! ...2i cycles (breaking hexs and tetras)      !!!
+  Adj(i,flag(i,-3:-2))=1  ! ...2i cycles (breaking hexs and tetras)      !!!
 END DO                                                                       !!!
 ok=.false.                                                                   !!!
 ncluster=0                                                                   !!!

@@ -8,7 +8,7 @@ IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,nf,ne,nv,nflags,ii,jj,f                                        !!!
 INTEGER,ALLOCATABLE:: neigh(:,:),edge(:,:),cell(:,:,:),nedge(:,:)            !!!
 INTEGER,ALLOCATABLE:: face_edges(:,:),face_verts(:,:),nface(:),fcell(:,:,:)  !!!
-INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
+INTEGER,ALLOCATABLE:: flag(:,:)                !!!
 REAL(KIND=8):: acc,tol,a1(3),a2(3),v(3),u(3),c(4,3),drf,dff,ls,s             !!!
 REAL(KIND=8):: x1,x2,y1,y2,rad,rs                                            !!!
 REAL(KIND=8),ALLOCATABLE:: r(:,:),rflag(:,:)                                 !!!
@@ -38,7 +38,7 @@ CALL faces_maker(nv,ne,nf,neigh,cell,nedge,nface,face_edges,face_verts)      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating the flag graph                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag,neigh_flag,flag_color)
+CALL flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Ccomputing flag position vectors                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -49,7 +49,7 @@ CALL rflg_maker(nv,nflags,flag,neigh,cell,nedge,a1,a2,r,rflag,fcell)         !!!
 ! Plot parameters                                                            !!!
 CALL svg_params(a1,a2,c,ls,s,x1,x2,y1,y2)                                    !!!
 ! Distance parameters                                                        !!!
-CALL svg_dist(nv,r,nflags,flag,neigh_flag,rflag,drf,dff)                     !!!
+CALL svg_dist(nv,r,nflags,flag,rflag,drf,dff)                     !!!
 ! Opening input file                                                         !!!
 OPEN(NEWUNIT=f,FILE=TRIM(ADJUSTL(filename))//'.svg')                         !!!
 ! SVG header                                                                 !!!
@@ -84,7 +84,7 @@ DO ii=-3,3                                                                   !!!
     DO i=1,nflags                                                            !!!
       v=(rflag(i,:)+ii*a1+jj*a2)*s                                           !!!
       DO j=1,3                                                               !!!
-        u=(rflag(neigh_flag(i,j),:)+(ii+fcell(i,j,1))*a1+(jj+fcell(i,j,2))*a2)*s
+        u=(rflag(flag(i,-j),:)+(ii+fcell(i,j,1))*a1+(jj+fcell(i,j,2))*a2)*s
         rad=0.1*s                                                            !!!
         IF(j.eq.1)THEN                                                       !!!
           CALL make_svg_line(v,u,x1,x2,y1,y2,rad,'lime',f)                   !!!
@@ -104,9 +104,9 @@ DO ii=-3,3                                                                   !!!
       v=(rflag(i,:)+ii*a1+jj*a2)*s                                           !!!
       rad=drf*0.3*s                                                          !!!
       rs=rad*0.1D0                                                           !!!
-      IF(flag_color(i).eq.1)THEN                                             !!!
+      IF(flag(i,0).eq.1)THEN                                             !!!
         CALL make_svg_circle(v,x1,x2,y1,y2,rad,rs,'black','black',f)         !!!
-      ELSE IF(flag_color(i).eq.-1)THEN                                       !!!
+      ELSE IF(flag(i,0).eq.-1)THEN                                       !!!
         CALL make_svg_circle(v,x1,x2,y1,y2,rad,rs,'white','black',f)         !!!
       END IF                                                                 !!!
     END DO                                                                   !!!

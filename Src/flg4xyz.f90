@@ -7,14 +7,10 @@ USE tools_conv                                                               !!!
 USE tools_maps                                                               !!!
 USE tools_make                                                               !!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,k,nf,ne,nv,nflags,nmax,nmaps                                   !!!
+INTEGER:: i,j,k,nf,ne,nv,nflags                                   !!!
 INTEGER,ALLOCATABLE:: neigh(:,:),edge(:,:),cell(:,:,:),nedge(:,:)            !!!
 INTEGER,ALLOCATABLE:: face_edges(:,:),face_verts(:,:),nface(:),fev(:,:,:)    !!!
-INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
-INTEGER,ALLOCATABLE:: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:)                    !!!
-INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
-LOGICAL,ALLOCATABLE:: uneq_face(:)                                           !!!
-LOGICAL,ALLOCATABLE:: b_in_f(:,:),u_in_f(:,:)                                !!!
+INTEGER,ALLOCATABLE:: flag(:,:)                !!!
 REAL(KIND=8):: acc,tol,a1(3),a2(3)                                           !!!
 REAL(KIND=8),ALLOCATABLE:: r(:,:)                                            !!!
 CHARACTER*100:: filename,string                                              !!!
@@ -43,30 +39,11 @@ CALL faces_maker(nv,ne,nf,neigh,cell,nedge,nface,face_edges,face_verts)      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating the flag graph                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag,neigh_flag,flag_color)
+CALL flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Writing the flag graph                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL write_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)    !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Getting faces/edges/vertices/bridges in faces                              !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-nmax=MAXVAL(nface)                                                           !!!
-CALL fev_in_faces(nflags,flag,neigh_flag,nf,nface,f_in_f,e_in_f,v_in_f,b_in_f,nmax)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Creating symmetry maps (allocations inside)                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-CALL flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed)!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Getting unequivalent faces and edges                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ALLOCATE(uneq_face(nf),u_in_f(nf,nmax))                                      !!!
-CALL neq_fe(nflags,flag,nf,ne,nface,nmax,e_in_f,uneq_face,u_in_f,nmaps,maps) !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Writing faces/edges info on the .fcs file                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!                  
-CALL write_fcs(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &         !!!
-                                                 & b_in_f,u_in_f,filename)   !!!
+CALL write_flg(nf,ne,nv,nflags,nface,flag,filename)    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating FEV Tensor                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

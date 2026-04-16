@@ -11,7 +11,7 @@ SUBROUTINE build_flags(nflags,flag,nf,ne,nv,fev)                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: k,nf,ne,nv,fev(nf,ne,nv)                                           !!!
-INTEGER:: nflags,flag(nflags,3)                                              !!!
+INTEGER:: nflags,flag(nflags,-3:3)                                              !!!
 INTEGER:: e(3),f(3)                                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! We define the flag set for each vertex                                     !!!
@@ -82,51 +82,51 @@ END SUBROUTINE fe_for_v                                                      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE neigh_f(nflags,neigh_flag,nv)                                     !!!
+SUBROUTINE neigh_f(nflags,flag,nv)                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: k,nv,nflags,neigh_flag(nflags,3)                                   !!!
+INTEGER:: k,nv,nflags,flag(nflags,-3:3)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This is facilitated by the particular way the flags                        !!!
 ! were constructed and ordered around the vertex.                            !!!
 DO k=1,nv                                                                    !!!
-  neigh_flag(6*(k-1)+1,1)=6*(k-1)+2                                          !!!
-  neigh_flag(6*(k-1)+2,1)=6*(k-1)+1                                          !!!
-  neigh_flag(6*(k-1)+3,1)=6*(k-1)+4                                          !!!
-  neigh_flag(6*(k-1)+4,1)=6*(k-1)+3                                          !!!
-  neigh_flag(6*(k-1)+5,1)=6*(k-1)+6                                          !!!
-  neigh_flag(6*(k-1)+6,1)=6*(k-1)+5                                          !!!
+  flag(6*(k-1)+1,-1)=6*(k-1)+2                                          !!!
+  flag(6*(k-1)+2,-1)=6*(k-1)+1                                          !!!
+  flag(6*(k-1)+3,-1)=6*(k-1)+4                                          !!!
+  flag(6*(k-1)+4,-1)=6*(k-1)+3                                          !!!
+  flag(6*(k-1)+5,-1)=6*(k-1)+6                                          !!!
+  flag(6*(k-1)+6,-1)=6*(k-1)+5                                          !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE neigh_f                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE neigh_e(nflags,neigh_flag,nv)                                     !!!
+SUBROUTINE neigh_e(nflags,flag,nv)                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: k,nv,nflags,neigh_flag(nflags,3)                                   !!!
+INTEGER:: k,nv,nflags,flag(nflags,-3:3)                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This is facilitated by the particular way the flags                        !!!
 ! were constructed and ordered around the vertex.                            !!!
 DO k=1,nv                                                                    !!!
-  neigh_flag(6*(k-1)+2,2)=6*(k-1)+3                                          !!!
-  neigh_flag(6*(k-1)+3,2)=6*(k-1)+2                                          !!!
-  neigh_flag(6*(k-1)+4,2)=6*(k-1)+5                                          !!!
-  neigh_flag(6*(k-1)+5,2)=6*(k-1)+4                                          !!!
-  neigh_flag(6*(k-1)+6,2)=6*(k-1)+1                                          !!!
-  neigh_flag(6*(k-1)+1,2)=6*(k-1)+6                                          !!!
+  flag(6*(k-1)+2,-2)=6*(k-1)+3                                          !!!
+  flag(6*(k-1)+3,-2)=6*(k-1)+2                                          !!!
+  flag(6*(k-1)+4,-2)=6*(k-1)+5                                          !!!
+  flag(6*(k-1)+5,-2)=6*(k-1)+4                                          !!!
+  flag(6*(k-1)+6,-2)=6*(k-1)+1                                          !!!
+  flag(6*(k-1)+1,-2)=6*(k-1)+6                                          !!!
 END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE neigh_e                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE neigh_v(ne,nv,nflags,flag,neigh_flag,reduc_ev)                    !!!
+SUBROUTINE neigh_v(ne,nv,nflags,flag,reduc_ev)                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: k,l,j,kk,i1,i2,ne,nv,nflags,flag(nflags,3)                         !!!
-INTEGER:: neigh_flag(nflags,3),reduc_ev(ne,nv)                               !!!
+INTEGER:: k,l,j,kk,i1,i2,ne,nv,nflags,flag(nflags,-3:3)                         !!!
+INTEGER:: reduc_ev(ne,nv)                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 DO k=1,nv                                                                    !!!
   ! For each vertex, go through its 3 emerging edges                         !!!
@@ -142,8 +142,8 @@ DO k=1,nv                                                                    !!!
           DO i2=1,6                                                          !!!
             IF((flag(6*(k-1)+i1,1).eq.flag(6*(kk-1)+i2,1)).AND. &            !!!
              & (flag(6*(k-1)+i1,2).eq.flag(6*(kk-1)+i2,2)))THEN              !!!
-              neigh_flag(6*(k-1)+i1,3)=6*(kk-1)+i2                           !!!
-              neigh_flag(6*(kk-1)+i2,3)=6*(k-1)+i1                           !!!
+              flag(6*(k-1)+i1,-3)=6*(kk-1)+i2                           !!!
+              flag(6*(kk-1)+i2,-3)=6*(k-1)+i1                           !!!
               EXIT                                                           !!!
             END IF                                                           !!!
           END DO                                                             !!!
@@ -164,7 +164,7 @@ SUBROUTINE nfaces_from_flg(nf,nflags,flag,nface)                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER:: i,nf,nflags,flag(nflags,3)                                         !!!
+INTEGER:: i,nf,nflags,flag(nflags,-3:3)                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Counting flags for each face                                               !!!
 ALLOCATE(nface(nf))                                                          !!!
@@ -179,14 +179,14 @@ END SUBROUTINE nfaces_from_flg                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE flg_to_pri(filename,nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,ntramaps,tmaps)
+SUBROUTINE flg_to_pri(filename,nf,ne,nv,nflags,nface,flag,ntramaps,tmaps)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Routine to apply the FE, FV, and EV sum rules.                             !!!
 ! Also gets number of sides of each face.                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER,ALLOCATABLE,INTENT(INOUT):: nface(:),flag(:,:),neigh_flag(:,:),flag_color(:)
-INTEGER,ALLOCATABLE:: nface2(:),flag2(:,:),neigh_flag2(:,:),flag_color2(:)
+INTEGER,ALLOCATABLE,INTENT(INOUT):: nface(:),flag(:,:)
+INTEGER,ALLOCATABLE:: nface2(:),flag2(:,:)
 INTEGER:: nf,ne,nv,nflags,ntramaps,tmaps(ntramaps,nflags)     !!!
 INTEGER:: f2f(nf),e2e(ne),v2v(nv),face(nf),edge(ne),vertex(nv)   !!!
 INTEGER:: fi,ei,vi,i,j,l,fl2fl(nflags),flg(nflags),fli   !!!
@@ -290,7 +290,7 @@ flag(:,1)=f2f(flag(:,1))                                                     !!!
 flag(:,2)=e2e(flag(:,2))                                                     !!!
 flag(:,3)=v2v(flag(:,3))                                                     !!!
 ! Reallocating flags
-ALLOCATE(flag2(nflags,3),neigh_flag2(nflags,3),flag_color2(nflags))
+ALLOCATE(flag2(nflags,-3:3))
 l=0
 DO i=1,nflags*(ntramaps+1)
   new=.true.
@@ -302,15 +302,12 @@ DO i=1,nflags*(ntramaps+1)
   END DO
   IF(new)THEN
     l=l+1
-    flag2(l,:)=flag(i,:)
-    neigh_flag2(l,:)=fl2fl(neigh_flag(i,:))
-    flag_color2(l)=flag_color(i)
+    flag2(l,0:3)=flag(i,0:3)
+    flag2(l,-3:-1)=fl2fl(flag(i,-3:-1))
   END IF
 END DO
 
 CALL MOVE_ALLOC(flag2,flag)
-CALL MOVE_ALLOC(neigh_flag2,neigh_flag)
-CALL MOVE_ALLOC(flag_color2,flag_color)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE flg_to_pri                                                 !!!

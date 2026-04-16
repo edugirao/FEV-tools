@@ -31,12 +31,12 @@ END SUBROUTINE svg_params                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE svg_dist(nv,r,nflags,flag,neigh_flag,rflag,drf,dff)    !!!
+SUBROUTINE svg_dist(nv,r,nflags,flag,rflag,drf,dff)    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nv,nflags,flag(nflags,3),neigh_flag(nflags,3)
+INTEGER:: i,j,nv,nflags,flag(nflags,-3:3)
 REAL(KIND=8):: d,drf,dff           !!!
 REAL(KIND=8):: r(nv,3),rflag(nflags,3)                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -48,7 +48,7 @@ END DO
 dff=1.0D7
 DO i=1,nflags
   DO j=1,3
-    d=DSQRT(SUM((rflag(i,:)-rflag(neigh_flag(i,j),:))**2))
+    d=DSQRT(SUM((rflag(i,:)-rflag(flag(i,-j),:))**2))
     IF(d.lt.dff) dff=d 
   END DO  
 END DO

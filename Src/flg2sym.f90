@@ -11,16 +11,14 @@ USE tools_writ                                                               !!!
 USE tools_conv                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,ne,nv,nflags,nrotmaps,nmirmaps,nglimaps,ntramaps                !!!
-INTEGER:: mirror_count,nmaps,nrot,nmir,nmax                                  !!!
+INTEGER:: mirror_count,nmaps,nrot,nmir                                  !!!
 INTEGER,ALLOCATABLE:: flag(:,:),nface(:),m2(:,:),m1(:,:)                     !!!
-INTEGER,ALLOCATABLE:: flag_color(:),neigh_flag(:,:)                          !!!
 INTEGER,ALLOCATABLE:: maps(:,:),maps_nfixed(:)                               !!!
 INTEGER,ALLOCATABLE:: rot_i(:),rot_n(:),mir_i(:),mir_m(:)                    !!!
-INTEGER,ALLOCATABLE:: e_in_f(:,:),v_in_f(:,:)                                !!!
 CHARACTER*1,ALLOCATABLE:: rot_e(:),mir_e(:)                                  !!!
 CHARACTER*100:: filename                                                     !!!
 CHARACTER*4:: group                                                          !!!
-LOGICAL:: nocross,flg,fcs                                                    !!!
+LOGICAL:: nocross,flgf                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Identifying input file                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -28,20 +26,15 @@ CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Where to read the system's data                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL wheretoread(flg,fcs,filename)
+INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.flg',EXIST=flgf)                     !!!
+IF(.not.flgf) INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.flg',EXIST=flgf)       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading the flag graph or obtaining it from faces-info                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IF(flg)THEN                                                                  !!!
+IF(flgf)THEN                                                                  !!!
   ! Reading the flag graph from a .flg or a .b.flg file                      !!!
   WRITE(*,*) 'Reading from a .b.flg or a .flg file.'                         !!!
-  CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)   !!!
-ELSE IF(fcs)THEN                                                             !!!
-  ! Reading part of fcs info from an .fcs or .b.fcs file (allocations inside)!!!
-  WRITE(*,*) 'Reading from a .b.fcs or a .fcs file.'                         !!!
-  CALL read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename)     !!!
-  ! Create flg from fcs (allocations inside fcs_to_flg)                      !!!
-  CALL fcs_to_flg(nf,nmax,nface,e_in_f,v_in_f,nflags,flag,neigh_flag,flag_color)
+  CALL read_flg(nf,ne,nv,nflags,nface,flag,filename)   !!!
 ELSE                                                                         !!!
   STOP 'No flag-graph or faces-info file found!'                             !!!
 END IF                                                                       !!!
@@ -49,11 +42,11 @@ END IF                                                                       !!!
 ! Creating maps (fev_maps.f90)                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Searching maps from flags                                                  !!!
-CALL flg2map(nflags,flag,neigh_flag,flag_color,nf,nface,nmaps,maps,maps_nfixed,m1,m2)
+CALL flg2map(nflags,flag,nf,nface,nmaps,maps,maps_nfixed,m1,m2)
 ! Writing maps                                                               !!!
 CALL write_map(nflags,nmaps,maps,maps_nfixed,filename)                       !!!
 ! Identifying map types                                                      !!!
-CALL map_types(nflags,flag_color,nrotmaps,nmirmaps,nglimaps,ntramaps,nmaps,maps,maps_nfixed)
+CALL map_types(nflags,flag,nrotmaps,nmirmaps,nglimaps,ntramaps,nmaps,maps,maps_nfixed)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Extracting symmetries from maps (fev_symm.f90)                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -74,7 +67,7 @@ CALL symmetry_group(nrotmaps,nmirmaps,nglimaps,mirror_count,nocross,group)   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Deallocations                                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-DEALLOCATE(flag,neigh_flag,flag_color,nface,m1,m2)                           !!!
+DEALLOCATE(flag,nface,m1,m2)                           !!!
 OPEN(UNIT=1,FILE=TRIM(ADJUSTL(filename))//'.sym')                            !!!
 WRITE(1,'(A)') group                                                         !!!
 CLOSE(UNIT=1)                                                                !!!

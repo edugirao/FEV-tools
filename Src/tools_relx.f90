@@ -2,18 +2,18 @@
 MODULE tools_relx                                                            !!!
 IMPLICIT NONE                                                                !!!
 PRIVATE                                                                      !!!
-PUBLIC:: make_graphene,xyz_optimization                          !!!
+PUBLIC:: make_graphene,xyz_relaxation                          !!!
 CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE xyz_optimization(nf,nv,nmax,nface,v_in_f,x_in_f,y_in_f,r,filename)!!!
+SUBROUTINE xyz_relaxation(nv,nflags,flag,cflag,r,filename)     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,nf,nv,nmax,makesvgpdf                                          !!!
-INTEGER:: nn(nv),neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3)                     !!!
-INTEGER:: nface(nf),nstepmax                                                 !!!
-INTEGER:: v_in_f(nf,nmax),x_in_f(nf,nmax),y_in_f(nf,nmax)                    !!!
+INTEGER:: i,j,l,nv,nflags,makesvgpdf                                          !!!
+INTEGER:: nn(nv),neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3),neigh_f(nv,3)                     !!!
+INTEGER:: flag(nflags,-3:3),cflag(nflags,2)
+INTEGER:: nstepmax,nstep                                                 !!!
 CHARACTER*100:: filename                                                     !!!
 REAL(KIND=8):: d0,dmax,pi,k,ka,q,dt                                          !!!
 REAL(KIND=8):: r(nv,2),f(nv,2)                                               !!!
@@ -21,13 +21,26 @@ LOGICAL:: yes                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 pi=DACOS(-1.0D0)                                                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! nxy to neigh                                                               !!!
+! cflag to neigh                                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y) 
+nn=0                                                                         !!!
+neigh=0                                                                      !!!
+neigh_f=0                                                                    !!!
+neigh_x=0                                                                    !!!
+neigh_y=0                                                                    !!!
+DO l=1,nflags                                                                    !!!
+  IF(flag(l,0).eq.-1) CYCLE
+  i=flag(l,3)
+  nn(i)=nn(i)+1
+  neigh(i,nn(i))=flag(flag(l,-3),3)
+  neigh_x(i,nn(i))=cflag(l,1)
+  neigh_y(i,nn(i))=cflag(l,2)
+  neigh_f(i,nn(i))=l
+END DO                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reorder neighbors to have cyclic sequence                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CALL order_neigh(nv,r,neigh,neigh_x,neigh_y)                                 !!!
+CALL order_neigh(nv,r,neigh,neigh_x,neigh_y,neigh_f)                                 !!!
                                                                              !!!
 INQUIRE(FILE='relax.par',EXIST=yes)                                          !!!
 IF(yes)THEN                                                                  !!!
@@ -56,7 +69,7 @@ END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Optimization                                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-DO j=1,nstepmax                                                              !!!
+DO nstep=1,nstepmax                                                              !!!
   ! Average bond distance                                                    !!!
   d0=d_ave(nv,r,neigh,neigh_x,neigh_y)                                       !!!
   ! Forces                                                                   !!!
@@ -72,15 +85,33 @@ DO j=1,nstepmax                                                              !!!
   r=r+f                                                                      !!!
   ! Correcting neigh info                                                    !!!
   CALL correct_neigh(nv,r,neigh,neigh_x,neigh_y)                             !!!
-  ! Correcting neighs in faces                                               !!!
-  CALL correct_nxy(nf,nface,nmax,nv,r,v_in_f,x_in_f,y_in_f)                  !!!
+!   ! Correcting neighs in faces                                               !!!
+!   CALL correct_nxy(nf,nface,nmax,nv,r,v_in_f,x_in_f,y_in_f)                  !!!
   ! Correcting coordinates                                                   !!!
   CALL correct_coordinates(nv,r)                                             !!!
 END DO                                                                       !!!
-IF(j.gt.nstepmax)THEN                                                        !!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! neigh to cflag                                                             !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+cflag=0                                                                    !!!
+DO i=1,nv                                                                    !!!
+  DO j=1,3
+    l=neigh_f(i,j)
+    cflag(l,1)=neigh_x(i,j)
+    cflag(l,2)=neigh_y(i,j)
+    l=flag(l,-1)
+    cflag(l,1)=neigh_x(i,j)
+    cflag(l,2)=neigh_y(i,j)
+  END DO
+END DO 
+
+
+
+IF(nstep.gt.nstepmax)THEN                                                        !!!
   WRITE(*,'(A,I0,A)') 'Not optimized after ',nstepmax,' steps.'              !!!
 ELSE                                                                         !!!
-  WRITE(*,'(A,I0,A)') 'Optimized in ',j,' steps.'                            !!!
+  WRITE(*,'(A,I0,A)') 'Optimized in ',nstep,' steps.'                            !!!
 END IF                                                                       !!!
                                                                              !!!
 IF(makesvgpdf.ne.0)THEN                                                      !!!
@@ -88,7 +119,7 @@ IF(makesvgpdf.ne.0)THEN                                                      !!!
   CALL SYSTEM('inkscape '//TRIM(ADJUSTL(filename))//'.svg -o '//TRIM(ADJUSTL(filename))//'.pdf')
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE xyz_optimization                                              !!!
+END SUBROUTINE xyz_relaxation                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -115,49 +146,10 @@ END FUNCTION d_ave                                                           !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y) 
+SUBROUTINE order_neigh(nv,r,neigh,neigh_x,neigh_y,neigh_f)                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,l,nv,neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3),nf,nface(nf),nn(nv)
-INTEGER:: v_in_f(nf,nmax),x_in_f(nf,nmax),y_in_f(nf,nmax),nmax,n             !!!
-LOGICAL:: new                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-nn=0                                                                         !!!
-neigh=0                                                                      !!!
-neigh_x=0                                                                    !!!
-neigh_y=0                                                                    !!!
-DO l=1,nf                                                                    !!!
-  DO i=1,nface(l)                                                            !!!
-    j=i+1                                                                    !!!
-    IF(i.eq.nface(l)) j=1                                                    !!!
-    new=.true.                                                               !!!
-    DO n=1,nn(v_in_f(l,i))                                                   !!!
-      IF(neigh(v_in_f(l,i),n).eq.v_in_f(l,j))THEN                            !!!
-        IF(neigh_x(v_in_f(l,i),n).eq.x_in_f(l,i))THEN                        !!!
-          IF(neigh_y(v_in_f(l,i),n).eq.y_in_f(l,i))THEN                      !!!
-            new=.false.                                                      !!!
-            EXIT                                                             !!!
-          END IF                                                             !!!
-        END IF                                                               !!!
-      END IF                                                                 !!!
-    END DO                                                                   !!!
-    IF(new)THEN                                                              !!!
-      nn(v_in_f(l,i))=nn(v_in_f(l,i))+1                                      !!!
-      neigh(v_in_f(l,i),nn(v_in_f(l,i)))=v_in_f(l,j)                         !!!
-      neigh_x(v_in_f(l,i),nn(v_in_f(l,i)))=x_in_f(l,i)                       !!!
-      neigh_y(v_in_f(l,i),nn(v_in_f(l,i)))=y_in_f(l,i)                       !!!
-    END IF                                                                   !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE nxy2neigh                                                     !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE order_neigh(nv,r,neigh,neigh_x,neigh_y)                           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: i,nv,neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3),tmp                   !!!
+INTEGER:: i,nv,neigh(nv,3),neigh_x(nv,3),neigh_y(nv,3),neigh_f(nv,3),tmp     !!!
 REAL(KIND=8):: r(nv,2),r1(2),r2(2),r3(2),pi,tmpr,x(2),y(2)                   !!!
 REAL(KIND=8):: theta1,theta2,theta3                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -186,6 +178,9 @@ DO i=1,nv                                                                    !!!
     tmp=neigh_y(i,3)                                                         !!!
     neigh_y(i,3)=neigh_y(i,2)                                                !!!
     neigh_y(i,2)=tmp                                                         !!!
+    tmp=neigh_f(i,3)                                                         !!!
+    neigh_f(i,3)=neigh_f(i,2)                                                !!!
+    neigh_f(i,2)=tmp                                                         !!!    
     tmpr=theta3                                                              !!!
     theta3=theta2                                                            !!!
     theta2=tmpr                                                              !!!
@@ -200,6 +195,9 @@ DO i=1,nv                                                                    !!!
     tmp=neigh_y(i,1)                                                         !!!
     neigh_y(i,1)=neigh_y(i,2)                                                !!!
     neigh_y(i,2)=tmp                                                         !!!
+    tmp=neigh_f(i,1)                                                         !!!
+    neigh_f(i,1)=neigh_f(i,2)                                                !!!
+    neigh_f(i,2)=tmp                                                         !!!
     tmpr=theta1                                                              !!!
     theta1=theta2                                                            !!!
     theta2=tmpr                                                              !!!
@@ -214,6 +212,9 @@ DO i=1,nv                                                                    !!!
     tmp=neigh_y(i,3)                                                         !!!
     neigh_y(i,3)=neigh_y(i,2)                                                !!!
     neigh_y(i,2)=tmp                                                         !!!
+    tmp=neigh_f(i,3)                                                         !!!
+    neigh_f(i,3)=neigh_f(i,2)                                                !!!
+    neigh_f(i,2)=tmp                                                         !!!
     tmpr=theta3                                                              !!!
     theta3=theta2                                                            !!!
     theta2=tmpr                                                              !!!
@@ -259,40 +260,6 @@ END SUBROUTINE correct_neigh                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE correct_nxy(nf,nface,nmax,nv,r,v_in_f,x_in_f,y_in_f)              !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: i,l,nv,delta,i1,i2,nf,nface(nf),nmax,n                             !!!
-INTEGER:: v_in_f(nf,nmax),x_in_f(nf,nmax),y_in_f(nf,nmax)                    !!!
-REAL(KIND=8):: r(nv,2),r1(2),r2(2),x(2),y(2)                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-x(1)=1.0D0                                                                   !!!
-x(2)=0.0D0                                                                   !!!
-y(1)=0.0D0                                                                   !!!
-y(2)=1.0D0                                                                   !!!
-DO l=1,nf                                                                    !!!
-  DO i=1,nface(l)                                                            !!!
-    n=i+1                                                                    !!!
-    IF(i.eq.nface(l)) n=1                                                    !!!
-    r1=r(v_in_f(l,i),:)                                                      !!!
-    r2=r(v_in_f(l,n),:)+x*x_in_f(l,i)+y*y_in_f(l,i)                          !!!
-    i1=FLOOR(r1(1))                                                          !!!
-    i2=FLOOR(r2(1))                                                          !!!
-    delta=i2-i1                                                              !!!
-    IF(ABS(delta).gt.2) stop 'aaaa'                                          !!!
-    x_in_f(l,i)=delta                                                        !!!
-    i1=FLOOR(r1(2))                                                          !!!
-    i2=FLOOR(r2(2))                                                          !!!
-    delta=i2-i1                                                              !!!
-    IF(ABS(delta).gt.2) stop 'aaaa'                                          !!!
-    y_in_f(l,i)=delta                                                        !!!
-  END DO                                                                     !!!
-END DO                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE correct_nxy                                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE correct_coordinates(nv,r)                                         !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
@@ -313,22 +280,20 @@ END SUBROUTINE correct_coordinates                                           !!!
 SUBROUTINE make_graphene(i0,filename)                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: nf,nv,x_in_f(1,6),y_in_f(1,6),v_in_f(1,6),nface(1)                 !!!
-INTEGER:: nn(2),neigh(2,3),neigh_x(2,3),neigh_y(2,3),nmax,i0                 !!!
+INTEGER:: nv,neigh(2,3),neigh_x(2,3),neigh_y(2,3),i0                 !!!
 REAL(KIND=8):: r(2,2)                                                        !!!
 CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! filename='6'                                                               !!!
 print*, 'Making ',filename                                                   !!!
-i0=2                                                                         !!!
-nf=1                                                                         !!!
-nface(1)=6                                                                   !!!
-nmax=6                                                                       !!!
-v_in_f(1,:)= (/1,2,1,2,1,2/)                                                 !!!
-x_in_f(1,:)= (/0,0,-1,0,0,1/)                                                !!!
-y_in_f(1,:)= (/0,1,0,0,-1,0/)                                                !!!
+i0=2
 nv=2                                                                         !!!
-CALL nxy2neigh(nf,nface,nmax,v_in_f,x_in_f,y_in_f,nv,nn,neigh,neigh_x,neigh_y)!!
+neigh(1,1)=2 ; neigh_x(1,1)=0  ; neigh_y(1,1)=0
+neigh(1,2)=2 ; neigh_x(1,2)=-1 ; neigh_y(1,2)=0
+neigh(1,3)=2 ; neigh_x(1,3)=0  ; neigh_y(1,3)=-1
+neigh(2,1)=1 ; neigh_x(2,1)=0  ; neigh_y(2,1)=0
+neigh(2,2)=1 ; neigh_x(2,2)=1  ; neigh_y(2,2)=0
+neigh(2,3)=1 ; neigh_x(2,3)=0  ; neigh_y(2,3)=1
 r(1,:)=0.37D0                                                                !!!
 r(2,:)=0.67D0                                                                !!!
 CALL svgfig_maker(nv,r,neigh,neigh_x,neigh_y,TRIM(ADJUSTL(filename)))        !!!

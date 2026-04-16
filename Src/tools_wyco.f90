@@ -1,22 +1,16 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-MODULE tools_bipt                                                            !!!
+MODULE tools_wyco                                                            !!!
 IMPLICIT NONE                                                                !!!
 PRIVATE                                                                      !!!
-PUBLIC:: bipartition                                                         !!!
+PUBLIC:: wyckoff                                                         !!!
 CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE bipartition(nflags,flag_color,neigh_flag,flag,nf,nface,ng,neigh_flag_set,flag_color_set)
+SUBROUTINE wyckoff
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,c1,c2,f,tmpsize                                                  !!!
-INTEGER:: nflags,flag_color(nflags),flag(nflags,3),ng,ncluster,nf            !!!
-INTEGER:: neigh_flag(nflags,3),neigh_flag2(nflags,3),flag_color2(nflags)     !!!
-INTEGER:: cluster(nflags),cluster2(nflags),nface(nf)                         !!!
-INTEGER,ALLOCATABLE:: inv_bit(:),neigh_flag_set(:,:,:),flag_color_set(:,:)   !!!
-INTEGER,ALLOCATABLE:: neigh_flag_set2(:,:,:),flag_color_set2(:,:)            !!!
-LOGICAL:: done,torus,endsearch                                               !!!
+INTEGER:: i
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Generating initial bipartition split                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -100,10 +94,10 @@ f        |      12      |       1       | (x,y)
             
             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE bipartition                                                   !!!
+END SUBROUTINE wyckoff                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END MODULE tools_bipt                                                        !!!
+END MODULE tools_wyco                                                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

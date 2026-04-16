@@ -10,7 +10,7 @@ CONTAINS                                                                     !!!
 SUBROUTINE get_rot(nflags,flag,m1,nmaps,maps,maps_nfixed,nrot,rot_e,rot_i,rot_n)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,n,p,nrot,n_c_axis,nflags,flag(nflags,3),fixed(3),tmpsize       !!!
+INTEGER:: i,j,n,p,nrot,n_c_axis,nflags,flag(nflags,-3:3),fixed(3),tmpsize       !!!
 INTEGER:: m1(nflags,nflags),mapa(nflags),nmaps,nfixed                        !!!
 INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
 INTEGER,ALLOCATABLE:: rot(:),rot_i(:),rot_n(:),rot2(:),rot_i2(:),rot_n2(:)   !!!
@@ -82,7 +82,7 @@ END SUBROUTINE get_rot                                                       !!!
 SUBROUTINE get_mir(nflags,flag,m2,nmaps,maps,maps_nfixed,nmir,mir_e,mir_i,mir_m)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: i,j,js,n,p,nmir,nflags,flag(nflags,3),fixed(3),v1(3),v2(3)         !!!
+INTEGER:: i,j,js,n,p,nmir,nflags,flag(nflags,-3:3),fixed(3),v1(3),v2(3)         !!!
 INTEGER:: m2(nflags,nflags),mapa(nflags),nmaps,nfixed,tmpsize                !!!
 INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
 INTEGER,ALLOCATABLE:: mir(:),mir_i(:),mir_m(:),mir2(:),mir_i2(:),mir_m2(:)   !!!
@@ -106,8 +106,8 @@ DO i=1,nmaps                                                                 !!!
       IF(m2(n,mapa(n)).eq.1)THEN                                             !!!
         ! Searching for mirror elements inside the map                       !!!
         js=1                                                                 !!!
-        v1=flag(n,:)                                                         !!!
-        v2=flag(mapa(n),:)                                                   !!!
+        v1=flag(n,1:3)                                                         !!!
+        v2=flag(mapa(n),1:3)                                                   !!!
         IF(tri_d_kro(v1,v2).eq.3) js=2                                       !!!
         DO j=js,3                                                            !!!
           fixed=0                                                            !!!
@@ -180,7 +180,7 @@ SUBROUTINE counting_mirrors(nflags,flag,m2,nmaps,maps,maps_nfixed,mirror_count)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nflags,mapa(nflags),mirror_count,nfix,ilast                        !!!
-INTEGER:: flag(nflags,3),fixed(nflags,2),i,j,n,p                             !!!
+INTEGER:: flag(nflags,-3:3),fixed(nflags,2),i,j,n,p                             !!!
 INTEGER:: m2(nflags,nflags),fix(2,2),nmaps,nfixed                            !!!
 INTEGER:: maps(nmaps,nflags),maps_nfixed(nmaps)                              !!!
 INTEGER:: neighfix(nflags,2),nnfix(nflags),ii(2),nmirmaps                    !!!

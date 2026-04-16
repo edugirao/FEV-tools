@@ -6,112 +6,6 @@ CONTAINS                                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_fcs(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &   !!!
-                                                 & b_in_f,u_in_f,filename)   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-INTEGER,INTENT(IN):: nf,ne,nv,nmax,nface(nf)                                 !!!
-INTEGER,INTENT(IN):: f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax)         !!!
-LOGICAL,INTENT(IN):: uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax)           !!!
-INTEGER:: i,u                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs')                         !!!
-! Writing tensor sizes                                                       !!!
-WRITE(u,'(4I5)') nf,ne,nv,nmax                                               !!!
-! Writing faces 1) size,uneq_face, 2) edges, and 3) vertices                 !!!
-DO i=1,nf                                                                    !!!
-  WRITE(u,'(I0,2X,L1)') nface(i),uneq_face(i)                                !!!
-  WRITE(u,'(100I7)') f_in_f(i,1:nface(i))                                    !!!
-  WRITE(u,'(100I7)') e_in_f(i,1:nface(i))                                    !!!
-  WRITE(u,'(100I7)') v_in_f(i,1:nface(i))                                    !!!
-  WRITE(u,'(100L7)') b_in_f(i,1:nface(i))                                    !!!
-  WRITE(u,'(100L7)') u_in_f(i,1:nface(i))                                    !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')    !!!
-! Writing tensor sizes                                                       !!!
-WRITE(u) nf,ne,nv,nmax                                                       !!!
-! Writing faces 1) size,uneq_face, 2) edges, and 3) vertices                 !!!
-DO i=1,nf                                                                    !!!
-  WRITE(u) nface(i),uneq_face(i)                                             !!!
-  WRITE(u) f_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) e_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) v_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) b_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) u_in_f(i,1:nface(i))                                              !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE write_fcs                                                     !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_fcs_bin(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &!!
-                                                 & b_in_f,u_in_f,filename)   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-INTEGER,INTENT(IN):: nf,ne,nv,nmax,nface(nf)                                 !!!
-INTEGER,INTENT(IN):: f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax)         !!!
-LOGICAL,INTENT(IN):: uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax)           !!!
-INTEGER:: i,u                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')    !!!
-! Writing tensor sizes                                                       !!!
-WRITE(u) nf,ne,nv,nmax                                                       !!!
-! Writing faces 1) size,uneq_face, 2) edges, and 3) vertices                 !!!
-DO i=1,nf                                                                    !!!
-  WRITE(u) nface(i),uneq_face(i)                                             !!!
-  WRITE(u) f_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) e_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) v_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) b_in_f(i,1:nface(i))                                              !!!
-  WRITE(u) u_in_f(i,1:nface(i))                                              !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE write_fcs_bin                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_fcs_for(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &!!
-                                                 & b_in_f,u_in_f,filename)   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-INTEGER,INTENT(IN):: nf,ne,nv,nmax,nface(nf)                                 !!!
-INTEGER,INTENT(IN):: f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax)         !!!
-LOGICAL,INTENT(IN):: uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax)           !!!
-INTEGER:: i,u                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs')                         !!!
-! Writing tensor sizes                                                       !!!
-WRITE(u,*) nf,ne,nv,nmax                                                     !!!
-! Writing faces 1) size,uneq_face, 2) edges, and 3) vertices                 !!!
-DO i=1,nf                                                                    !!!
-  WRITE(u,*) nface(i),uneq_face(i)                                           !!!
-  WRITE(u,*) f_in_f(i,1:nface(i))                                            !!!
-  WRITE(u,*) e_in_f(i,1:nface(i))                                            !!!
-  WRITE(u,*) v_in_f(i,1:nface(i))                                            !!!
-  WRITE(u,*) b_in_f(i,1:nface(i))                                            !!!
-  WRITE(u,*) u_in_f(i,1:nface(i))                                            !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE write_fcs_for                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 SUBROUTINE write_fev(nf,ne,nv,fev,filename)                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
@@ -137,7 +31,7 @@ END SUBROUTINE write_fev                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)!
+SUBROUTINE write_flg(nf,ne,nv,nflags,nface,flag,filename)!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -145,29 +39,27 @@ SUBROUTINE write_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)!
 IMPLICIT NONE                                                                !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 INTEGER,INTENT(IN):: nf,ne,nv,nflags,nface(nf)                               !!!
-INTEGER,INTENT(IN):: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags)  !!!
+INTEGER,INTENT(IN):: flag(nflags,-3:3)  !!!
 INTEGER:: i,u                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg')                         !!!
 WRITE(u,*) nflags,nf,ne,nv                                                   !!!
 WRITE(u,*) nface                                                             !!!
 DO i=1,nflags                                                                !!!
-  WRITE(u,*) flag(i,:),neigh_flag(i,:),flag_color(i)                         !!!
+  WRITE(u,*) flag(i,:)                         !!!
 END DO                                                                       !!!
 CLOSE(UNIT=u)                                                                !!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED')    !!!
 WRITE(u) nflags,nf,ne,nv                                                     !!!
 WRITE(u) nface                                                               !!!
 WRITE(u) flag                                                                !!!
-WRITE(u) neigh_flag                                                          !!!
-WRITE(u) flag_color                                                          !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_flg                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_flg_bin(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)
+SUBROUTINE write_flg_bin(nf,ne,nv,nflags,nface,flag,filename)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -175,22 +67,20 @@ SUBROUTINE write_flg_bin(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filena
 IMPLICIT NONE                                                                !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 INTEGER,INTENT(IN):: nf,ne,nv,nflags,nface(nf)                               !!!
-INTEGER,INTENT(IN):: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags)  !!!
+INTEGER,INTENT(IN):: flag(nflags,-3:3)  !!!
 INTEGER:: u                                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED')    !!!
 WRITE(u) nflags,nf,ne,nv                                                     !!!
 WRITE(u) nface                                                               !!!
 WRITE(u) flag                                                                !!!
-WRITE(u) neigh_flag                                                          !!!
-WRITE(u) flag_color                                                          !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_flg_bin                                                 !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_flg_for(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)
+SUBROUTINE write_flg_for(nf,ne,nv,nflags,nface,flag,filename)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -198,14 +88,14 @@ SUBROUTINE write_flg_for(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filena
 IMPLICIT NONE                                                                !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 INTEGER,INTENT(IN):: nf,ne,nv,nflags,nface(nf)                               !!!
-INTEGER,INTENT(IN):: flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags)  !!!
+INTEGER,INTENT(IN):: flag(nflags,-3:3)  !!!
 INTEGER:: i,u                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg')                         !!!
 WRITE(u,*) nflags,nf,ne,nv                                                   !!!
 WRITE(u,*) nface                                                             !!!
 DO i=1,nflags                                                                !!!
-  WRITE(u,*) flag(i,:),neigh_flag(i,:),flag_color(i)                         !!!
+  WRITE(u,*) flag(i,:)                         !!!
 END DO                                                                       !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -297,10 +187,11 @@ END SUBROUTINE write_mir                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_graphene(filename,fev,flg,fcs,nxy,xyz,gen)                  !!!
+SUBROUTINE write_graphene(filename,fev,flg,cfl,xyz,gen)                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
-INTEGER:: u,fev,flg,fcs,nxy,xyz,gen                                          !!!
+INTEGER:: u,fev,flg,cfl,xyz,gen
+INTEGER:: nface(1),flag(12,-3:3)               !!!
 CHARACTER(LEN=*):: filename                                                     !!!
 LOGICAL:: tru,fal                                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -319,68 +210,46 @@ IF(fev.ne.0)THEN                                                             !!!
   CLOSE(UNIT=u)                                                              !!!
 END IF                                                                       !!!
 IF(flg.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg')                       !!!
-  WRITE(u,*) '12    1    3    2'                                             !!!
-  WRITE(u,*) '6'                                                             !!!
-  WRITE(u,*) '1      1      1      2      6      8      1'                   !!!
-  WRITE(u,*) '1      1      1      1      3      7     -1'                   !!!
-  WRITE(u,*) '1      2      1      4      2     10      1'                   !!!
-  WRITE(u,*) '1      2      1      3      5      9     -1'                   !!!
-  WRITE(u,*) '1      3      1      6      4     12      1'                   !!!
-  WRITE(u,*) '1      3      1      5      1     11     -1'                   !!!
-  WRITE(u,*) '1      1      2      8     12      2      1'                   !!!
-  WRITE(u,*) '1      1      2      7      9      1     -1'                   !!!
-  WRITE(u,*) '1      2      2     10      8      4      1'                   !!!
-  WRITE(u,*) '1      2      2      9     11      3     -1'                   !!!
-  WRITE(u,*) '1      3      2     12     10      6      1'                   !!!
-  WRITE(u,*) '1      3      2     11      7      5     -1'                   !!!
-  WRITE(u,*)                                                                 !!!
-  CLOSE(UNIT=u)                                                              !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED')  !!!
-  WRITE(u) 12,1,3,2                                                          !!!
-  WRITE(u) 6                                                                 !!!
-  WRITE(u) 1,1,1, 2, 6, 8, 1                                                 !!!
-  WRITE(u) 1,1,1, 1, 3, 7,-1                                                 !!!
-  WRITE(u) 1,2,1, 4, 2,10, 1                                                 !!!
-  WRITE(u) 1,2,1, 3, 5, 9,-1                                                 !!!
-  WRITE(u) 1,3,1, 6, 4,12, 1                                                 !!!
-  WRITE(u) 1,3,1, 5, 1,11,-1                                                 !!!
-  WRITE(u) 1,1,2, 8,12, 2, 1                                                 !!!
-  WRITE(u) 1,1,2, 7, 9, 1,-1                                                 !!!
-  WRITE(u) 1,2,2,10, 8, 4, 1                                                 !!!
-  WRITE(u) 1,2,2, 9,11, 3,-1                                                 !!!
-  WRITE(u) 1,3,2,12,10, 6, 1                                                 !!!
-  WRITE(u) 1,3,2,11, 7, 5,-1                                                 !!!
-  CLOSE(UNIT=u)                                                              !!!  
+  nface(1)=6
+  flag(:,1)=1
+  flag(1:2,2)=1 ; flag(7:8,2)=1
+  flag(3:4,2)=2 ; flag(9:10,2)=2
+  flag(5:6,2)=3 ; flag(11:12,2)=3
+  flag(1:6,3)=1 ; flag(7:12,3)=2
+  flag(1,-1)= 2  ; flag(1,-2)= 6  ; flag(1,-3)= 8
+  flag(2,-1)= 1  ; flag(2,-2)= 3  ; flag(2,-3)= 7
+  flag(3,-1)= 4  ; flag(3,-2)= 2  ; flag(3,-3)=10
+  flag(4,-1)= 3  ; flag(4,-2)= 5  ; flag(4,-3)= 9
+  flag(5,-1)= 6  ; flag(5,-2)= 4  ; flag(5,-3)=12
+  flag(6,-1)= 5  ; flag(6,-2)= 1  ; flag(6,-3)=11
+  flag(7,-1)= 8  ; flag(7,-2)=12  ; flag(7,-3)= 2
+  flag(8,-1)= 7  ; flag(8,-2)= 9  ; flag(8,-3)= 1
+  flag(9,-1)=10  ; flag(9,-2)= 8  ; flag(9,-3)= 4
+  flag(10,-1)= 9 ; flag(10,-2)=11 ; flag(10,-3)= 3
+  flag(11,-1)=12 ; flag(11,-2)=10 ; flag(11,-3)= 6
+  flag(12,-1)=11 ; flag(12,-2)= 7 ; flag(12,-3)= 5
+  flag(1,0)=  1 ; flag(2,0)= -1 ; flag(3,0)=  1
+  flag(4,0)= -1 ; flag(5,0)=  1 ; flag(6,0)= -1
+  flag(7,0)=  1 ; flag(8,0)= -1 ; flag(9,0)=  1
+  flag(10,0)=-1 ; flag(11,0)= 1 ; flag(12,0)=-1
+  CALL write_flg(1,3,2,12,nface,flag,filename)
 END IF                                                                       !!!
-IF(fcs.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs')                       !!!
-  WRITE(u,*) '1    3    2    6'                                              !!!
-  WRITE(u,*) '6  T'                                                          !!!
-  WRITE(u,*) '1      1      1      1      1      1'                          !!!
-  WRITE(u,*) '1      2      3      1      2      3'                          !!!
-  WRITE(u,*) '1      2      1      2      1      2'                          !!!
-  WRITE(u,*) 'T      T      T      T      T      T'                          !!!
-  WRITE(u,*) 'T      F      F      F      F      F'                          !!!
-  WRITE(u,*)                                                                 !!!
-  CLOSE(UNIT=u)                                                              !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED')  !!!
-  WRITE(u) 1,3,2,6                                                           !!!
-  WRITE(u) 6,tru                                                             !!!
-  WRITE(u) 1,1,1,1,1,1                                                       !!!
-  WRITE(u) 1,2,3,1,2,3                                                       !!!
-  WRITE(u) 1,2,1,2,1,2                                                       !!!
-  WRITE(u) tru,tru,tru,tru,tru,tru                                           !!!
-  WRITE(u) tru,fal,fal,fal,fal,fal                                           !!!
-  CLOSE(UNIT=u)                                                              !!!
-END IF                                                                       !!!
-IF(nxy.ne.0)THEN                                                             !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.nxy')                       !!!
-  WRITE(u,*) '6'                                                             !!!
-  WRITE(u,*) '0      0     -1      0      0      1'                          !!!
-  WRITE(u,*) '0      1      0      0     -1      0'                          !!!
-  WRITE(u,*)                                                                 !!!
-  CLOSE(UNIT=u)                                                              !!!
+IF(cfl.ne.0)THEN                                                             !!!
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.cfl')
+  WRITE(u,*) 12
+  WRITE(u,*) 0,0
+  WRITE(u,*) 0,0
+  WRITE(u,*) 0,-1
+  WRITE(u,*) 0,-1
+  WRITE(u,*) -1,0
+  WRITE(u,*) -1,0
+  WRITE(u,*) 0,0
+  WRITE(u,*) 0,0
+  WRITE(u,*) 0,1
+  WRITE(u,*) 0,1
+  WRITE(u,*) 1,0
+  WRITE(u,*) 1,0
+  CLOSE(UNIT=u)   
 END IF                                                                       !!!
 IF(xyz.ne.0)THEN                                                             !!!
   OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.xyz')                       !!!
@@ -422,25 +291,6 @@ WRITE(u,*)                                                                   !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_xyz                                                     !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE write_nxy(nf,nmax,nface,x_in_f,y_in_f,filename)                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER:: nf,nmax,nface(nf),x_in_f(nf,nmax),y_in_f(nf,nmax)                  !!!
-INTEGER::u,i                                                                 !!!
-CHARACTER(LEN=*):: filename                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.nxy')                         !!!
-DO i=1,nf                                                                    !!!
-  WRITE(u,*) nface(i)                                                        !!!
-  WRITE(u,*) x_in_f(i,1:nface(i))                                            !!!
-  WRITE(u,*) y_in_f(i,1:nface(i))                                            !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE write_nxy                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -514,6 +364,30 @@ WRITE(u,'(A)') TRIM(ADJUSTL(string(3)))                                      !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE write_symbol                                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE write_cfl(nflags,cflag,filename)                                  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! This subroutine reads (from the inp file) the                              !!!
+! filelabel of the filelabel.fev file to be read                             !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER:: nflags                                      !!!
+INTEGER:: cflag(nflags,2)    !!!
+INTEGER:: i,u
+CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Opening formatted flg file                                             !!!
+OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.cfl')
+! Writing tensor sizes                                                   !!!    
+WRITE(u,*) nflags                                     !!!
+DO i=1,nflags                                                            !!!
+  WRITE(u,*) cflag(i,:)           !!!
+END DO                                                                   !!!
+CLOSE(UNIT=u)                                                            !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE write_cfl                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

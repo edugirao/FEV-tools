@@ -9,7 +9,7 @@ USE tools_conv                                                               !!!
 USE tools_writ                                                               !!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: nf,ne,nv,nflags                                                    !!!
-INTEGER,ALLOCATABLE:: flag(:,:),fev(:,:,:),neigh_flag(:,:),flag_color(:)     !!!
+INTEGER,ALLOCATABLE:: flag(:,:),fev(:,:,:)     !!!
 INTEGER,ALLOCATABLE:: nface(:)                                               !!!
 CHARACTER*100:: filename                                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -19,7 +19,7 @@ CALL read_init(filename,'inp')                                               !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Reading the flag graph from a .flg or a .b.flg file                        !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!          
-CALL read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)     !!!
+CALL read_flg(nf,ne,nv,nflags,nface,flag,filename)     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Creating the fev tensor                                                    !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!          

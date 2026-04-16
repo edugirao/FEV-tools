@@ -79,7 +79,7 @@ END SUBROUTINE read_fev                                                      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)!!
+SUBROUTINE read_flg(nf,ne,nv,nflags,nface,flag,filename)!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -87,7 +87,7 @@ SUBROUTINE read_flg(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)!!
 IMPLICIT NONE                                                                !!!
 INTEGER,INTENT(INOUT):: nf,ne,nv,nflags                                      !!!
 INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:),neigh_flag(:,:),flag_color(:)    !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:)    !!!
 INTEGER:: ios,i,u                                                            !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 LOGICAL:: have_file_b,have_file_f                                            !!!
@@ -99,16 +99,12 @@ IF(have_file_b)THEN                                                          !!!
   ! Reading tensor sizes                                                     !!!
   READ(u,IOSTAT=ios) nflags,nf,ne,nv                                         !!!
   IF(ios.ne.0) STOP 'Error while reading flg size in unformatted file!'      !!!
-  ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf)) !!!  
+  ALLOCATE(flag(nflags,-3:3),nface(nf)) !!!  
   ! Reading flg data                                                         !!!  
   READ(u,IOSTAT=ios) nface                                                   !!!
   IF(ios.ne.0) STOP 'Error while reading nface in .b.flg file'               !!!
   READ(u,IOSTAT=ios) flag                                                    !!!
   IF(ios.ne.0) STOP 'Error while reading flag in .b.flg file'                !!!
-  READ(u,IOSTAT=ios) neigh_flag                                              !!!
-  IF(ios.ne.0) STOP 'Error while reading neigh_flag in .b.flg file'          !!!
-  READ(u,IOSTAT=ios) flag_color                                              !!!
-  IF(ios.ne.0) STOP 'Error while reading flag_color in .b.flg file'          !!!
   CLOSE(UNIT=u)                                                              !!!
 ELSE                                                                         !!!
   INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.flg',EXIST=have_file_f)            !!!
@@ -118,12 +114,12 @@ ELSE                                                                         !!!
     ! Reading tensor sizes                                                   !!!    
     READ(u,*,IOSTAT=ios) nflags,nf,ne,nv                                     !!!
     IF(ios.ne.0) STOP 'Error while reading flg size in formatted file!'      !!!  
-    ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf))!!
+    ALLOCATE(flag(nflags,-3:3),nface(nf))!!
     ! Reading flg data                                                       !!!      
     READ(u,*,IOSTAT=ios) nface                                               !!!
     IF(ios.ne.0) STOP 'Error while reading nface in .flg file'               !!!
     DO i=1,nflags                                                            !!!
-      READ(u,*,IOSTAT=ios) flag(i,:),neigh_flag(i,:),flag_color(i)           !!!
+      READ(u,*,IOSTAT=ios) flag(i,:)           !!!
       IF(ios.ne.0) STOP 'Error while reading flags in .flg file'             !!!
     END DO                                                                   !!!
     CLOSE(UNIT=u)                                                            !!!
@@ -136,7 +132,34 @@ END SUBROUTINE read_flg                                                      !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_flg_bin(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)
+SUBROUTINE read_cfl(nflags,cflag,filename)!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! This subroutine reads (from the inp file) the                              !!!
+! filelabel of the filelabel.fev file to be read                             !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IMPLICIT NONE                                                                !!!
+INTEGER,INTENT(INOUT):: nflags                                      !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: cflag(:,:)    !!!
+INTEGER:: i,ios,u
+CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Opening formatted flg file                                             !!!
+    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.cfl',STATUS='OLD',ACTION='READ',IOSTAT=ios)
+    ! Reading tensor sizes                                                   !!!    
+    READ(u,*,IOSTAT=ios) i                                     !!!
+    IF(ios.ne.0) STOP 'Error while reading flg size in .cfl file!'      !!!  
+    ALLOCATE(cflag(nflags,2))!!
+    DO i=1,nflags                                                            !!!
+      READ(u,*,IOSTAT=ios) cflag(i,:)           !!!
+      IF(ios.ne.0) STOP 'Error while reading cflags in .cfl file'             !!!
+    END DO                                                                   !!!
+    CLOSE(UNIT=u)                                                            !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+END SUBROUTINE read_cfl                                                      !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE read_flg_bin(nf,ne,nv,nflags,nface,flag,filename)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -144,7 +167,7 @@ SUBROUTINE read_flg_bin(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filenam
 IMPLICIT NONE                                                                !!!
 INTEGER,INTENT(INOUT):: nf,ne,nv,nflags                                      !!!
 INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:),neigh_flag(:,:),flag_color(:)    !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:)    !!!
 INTEGER:: ios,u                                                              !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -153,19 +176,17 @@ OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED',STATUS=
 ! Reading tensor sizes                                                       !!!
 READ(u,IOSTAT=ios) nflags,nf,ne,nv                                           !!!
 IF(ios.ne.0) STOP 'Error while reading flg size in unformatted file!'        !!!
-ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf))   !!!  
+ALLOCATE(flag(nflags,-3:3),nface(nf))   !!!  
 ! Reading flg data                                                           !!!  
 READ(u,IOSTAT=ios) nface                                                                !!!
 READ(u,IOSTAT=ios) flag                                                                 !!!
-READ(u,IOSTAT=ios) neigh_flag                                                           !!!
-READ(u,IOSTAT=ios) flag_color                                                           !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE read_flg_bin                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_flg_for(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filename)
+SUBROUTINE read_flg_for(nf,ne,nv,nflags,nface,flag,filename)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
@@ -173,7 +194,7 @@ SUBROUTINE read_flg_for(nf,ne,nv,nflags,nface,flag,neigh_flag,flag_color,filenam
 IMPLICIT NONE                                                                !!!
 INTEGER,INTENT(INOUT):: nf,ne,nv,nflags                                      !!!
 INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:),neigh_flag(:,:),flag_color(:)    !!!
+INTEGER,ALLOCATABLE,INTENT(OUT):: flag(:,:)    !!!
 INTEGER:: ios,i,u                                                            !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -182,11 +203,11 @@ OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg',STATUS='OLD',ACTION='READ',I
 ! Reading tensor sizes                                                       !!!    
 READ(u,*,IOSTAT=ios) nflags,nf,ne,nv                                         !!!
 IF(ios.ne.0) STOP 'Error while reading flg size in formatted file!'          !!!  
-ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags),nface(nf))   !!!
+ALLOCATE(flag(nflags,-3:3),nface(nf))   !!!
 ! Reading flg data                                                           !!!      
 READ(u,*,IOSTAT=ios) nface                                                              !!!
 DO i=1,nflags                                                                !!!
-  READ(u,*,IOSTAT=ios) flag(i,:),neigh_flag(i,:),flag_color(i)                          !!!
+  READ(u,*,IOSTAT=ios) flag(i,:)                          !!!
 END DO                                                                       !!!
 CLOSE(UNIT=u)                                                                !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -194,382 +215,38 @@ END SUBROUTINE read_flg_for                                                  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_flg4kid(nf,nflags,nface,flag,neigh_flag,filename)            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(IN):: nf,nflags                                               !!!
-INTEGER,INTENT(OUT):: nface(nf)                                              !!!
-INTEGER,INTENT(OUT):: flag(nflags,3),neigh_flag(nflags,3)                    !!!
-INTEGER:: ios,u                                                              !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Opening unformatted flg file                                               !!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-! Reading tensor sizes                                                       !!!
-READ(u,IOSTAT=ios)                                                           !!!
-IF(ios.ne.0) STOP 'Error while reading flg size in unformatted file!'        !!!
-! Reading flg data                                                           !!!  
-READ(u,IOSTAT=ios) nface                                                                !!!
-READ(u,IOSTAT=ios) flag                                                                 !!!
-READ(u,IOSTAT=ios) neigh_flag                                                           !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_flg4kid                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &    !!!
-                                              b_in_f,u_in_f,filename)        !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,ne,nv,nmax                                          !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:),nface(:)!!
-LOGICAL,ALLOCATABLE,INTENT(OUT):: b_in_f(:,:),u_in_f(:,:),uneq_face(:)       !!!
-INTEGER:: ios,i,u                                                            !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-LOGICAL:: have_file_b,have_file_f                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
-IF(have_file_b)THEN                                                          !!!
-  ! Opening unformatted fcs file                                             !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-  ! Reading tensor sizes                                                     !!!
-  READ(u,IOSTAT=ios) nf,ne,nv,nmax                                           !!!
-  IF(ios.ne.0) STOP 'Error while reading fcs size in unformatted file!'      !!!
-  ! Allocating fcs info variables                                            !!!
-  ALLOCATE(nface(nf),uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax))          !!!
-  ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax))                  !!!  
-  ! Reading fcs data                                                         !!!  
-  DO i=1,nf                                                                  !!!
-    READ(u,IOSTAT=ios) nface(i),uneq_face(i)                                 !!!
-    IF(ios.ne.0) STOP 'Error reading nface/uneq_face in unformatted file!'   !!!
-    READ(u,IOSTAT=ios) f_in_f(i,1:nface(i))                                  !!!
-    IF(ios.ne.0) STOP 'Error while reading f_in_f in unformatted file!'      !!!
-    READ(u,IOSTAT=ios) e_in_f(i,1:nface(i))                                  !!!
-    IF(ios.ne.0) STOP 'Error while reading e_in_f in unformatted file!'      !!!
-    READ(u,IOSTAT=ios) v_in_f(i,1:nface(i))                                  !!!
-    IF(ios.ne.0) STOP 'Error while reading v_in_f in unformatted file!'      !!!
-    READ(u,IOSTAT=ios) b_in_f(i,1:nface(i))                                  !!!
-    IF(ios.ne.0) STOP 'Error while reading b_in_f in unformatted file!'      !!!
-    READ(u,IOSTAT=ios) u_in_f(i,1:nface(i))                                  !!!
-    IF(ios.ne.0) STOP 'Error while reading u_in_f in unformatted file!'      !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=u)                                                              !!!
-ELSE                                                                         !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)            !!!
-  IF(have_file_f)THEN                                                        !!!
-    ! Opening formatted fcs file                                             !!!
-    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-    ! Reading tensor sizes                                                   !!!    
-    READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                       !!!
-    IF(ios.ne.0) STOP 'Error while reading fcs size in formatted file!'      !!!  
-    ! Allocating fcs info variables                                          !!!
-    ALLOCATE(nface(nf),uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax))        !!!
-    ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax))                !!!    
-    ! Reading fcs data                                                       !!!      
-    DO i=1,nf                                                                !!!
-      READ(u,*,IOSTAT=ios) nface(i),uneq_face(i)                             !!!
-      IF(ios.ne.0) STOP 'Error reading nface/uneq_face in unformatted file!' !!!      
-      READ(u,*,IOSTAT=ios) f_in_f(i,1:nface(i))                              !!!
-      IF(ios.ne.0) STOP 'Error while reading f_in_f in formatted file!'      !!!
-      READ(u,*,IOSTAT=ios) e_in_f(i,1:nface(i))                              !!!
-      IF(ios.ne.0) STOP 'Error while reading e_in_f in formatted file!'      !!!
-      READ(u,*,IOSTAT=ios) v_in_f(i,1:nface(i))                              !!!
-      IF(ios.ne.0) STOP 'Error while reading v_in_f in formatted file!'      !!!
-      READ(u,*,IOSTAT=ios) b_in_f(i,1:nface(i))                              !!!
-      IF(ios.ne.0) STOP 'Error while reading b_in_f in formatted file!'      !!!
-      READ(u,*,IOSTAT=ios) u_in_f(i,1:nface(i))                              !!!
-      IF(ios.ne.0) STOP 'Error while reading u_in_f in formatted file!'      !!!
-    END DO                                                                   !!!
-    CLOSE(UNIT=u)                                                            !!!
-  ELSE                                                                       !!!
-    STOP 'Error: no .fcs or .b.fcs file found'                               !!!
-  END IF                                                                     !!!
-END IF                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs                                                      !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_bin(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &!!!
-                                              b_in_f,u_in_f,filename)        !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,ne,nv,nmax                                          !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:),nface(:)!!
-LOGICAL,ALLOCATABLE,INTENT(OUT):: b_in_f(:,:),u_in_f(:,:),uneq_face(:)       !!!
-INTEGER:: ios,i,u                                                            !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Opening unformatted fcs file                                               !!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-! Reading tensor sizes                                                       !!!
-READ(u,IOSTAT=ios) nf,ne,nv,nmax                                             !!!
-IF(ios.ne.0) STOP 'Error while reading fcs size in unformatted file!'        !!!
-! Allocating fcs info variables                                              !!!
-ALLOCATE(nface(nf),uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax))            !!!
-ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax))                    !!!  
-! Reading fcs data                                                           !!!  
-DO i=1,nf                                                                    !!!
-  READ(u,IOSTAT=ios) nface(i),uneq_face(i)                                   !!!
-  IF(ios.ne.0) STOP 'Error reading nface/uneq_face in unformatted file!'     !!!
-  READ(u,IOSTAT=ios) f_in_f(i,1:nface(i))                                    !!!
-  IF(ios.ne.0) STOP 'Error while reading f_in_f in unformatted file!'        !!!
-  READ(u,IOSTAT=ios) e_in_f(i,1:nface(i))                                    !!!
-  IF(ios.ne.0) STOP 'Error while reading e_in_f in unformatted file!'        !!!
-  READ(u,IOSTAT=ios) v_in_f(i,1:nface(i))                                    !!!
-  IF(ios.ne.0) STOP 'Error while reading v_in_f in unformatted file!'        !!!
-  READ(u,IOSTAT=ios) b_in_f(i,1:nface(i))                                    !!!
-  IF(ios.ne.0) STOP 'Error while reading b_in_f in unformatted file!'        !!!
-  READ(u,IOSTAT=ios) u_in_f(i,1:nface(i))                                    !!!
-  IF(ios.ne.0) STOP 'Error while reading u_in_f in unformatted file!'        !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_bin                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_for(nf,ne,nv,nmax,nface,uneq_face,f_in_f,e_in_f,v_in_f, &!!!
-                                                      b_in_f,u_in_f,filename)!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,ne,nv,nmax                                          !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:),nface(:)!!
-LOGICAL,ALLOCATABLE,INTENT(OUT):: b_in_f(:,:),u_in_f(:,:),uneq_face(:)       !!!
-INTEGER:: ios,i,u                                                            !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Opening formatted fcs file                                                 !!!
-OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-! Reading tensor sizes                                                       !!!    
-READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                           !!!
-IF(ios.ne.0) STOP 'Error while reading fcs size in formatted file!'          !!!  
-! Allocating fcs info variables                                              !!!
-ALLOCATE(nface(nf),uneq_face(nf),b_in_f(nf,nmax),u_in_f(nf,nmax))            !!!
-ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax))                    !!!    
-! Reading fcs data                                                           !!!      
-DO i=1,nf                                                                    !!!
-  READ(u,*,IOSTAT=ios) nface(i),uneq_face(i)                                 !!!
-  IF(ios.ne.0) STOP 'Error reading nface/uneq_face in unformatted file!'     !!!      
-  READ(u,*,IOSTAT=ios) f_in_f(i,1:nface(i))                                  !!!
-  IF(ios.ne.0) STOP 'Error while reading f_in_f in formatted file!'          !!!
-  READ(u,*,IOSTAT=ios) e_in_f(i,1:nface(i))                                  !!!
-  IF(ios.ne.0) STOP 'Error while reading e_in_f in formatted file!'          !!!
-  READ(u,*,IOSTAT=ios) v_in_f(i,1:nface(i))                                  !!!
-  IF(ios.ne.0) STOP 'Error while reading v_in_f in formatted file!'          !!!
-  READ(u,*,IOSTAT=ios) b_in_f(i,1:nface(i))                                  !!!
-  IF(ios.ne.0) STOP 'Error while reading b_in_f in formatted file!'          !!!
-  READ(u,*,IOSTAT=ios) u_in_f(i,1:nface(i))                                  !!!
-  IF(ios.ne.0) STOP 'Error while reading u_in_f in formatted file!'          !!!
-END DO                                                                       !!!
-CLOSE(UNIT=u)                                                                !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_for                                                  !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_only_nf(nf,filename)                                     !!!
+SUBROUTINE read_flg_only_nf(nf,filename)                                     !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! This subroutine reads (from the inp file) the                              !!!
 ! filelabel of the filelabel.fev file to be read                             !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER,INTENT(OUT):: nf                                                     !!!
-INTEGER:: ios,u                                                              !!!
+INTEGER:: ios,u,i                                                              !!!
 CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
 LOGICAL:: have_file_b,have_file_f                                            !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
+INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.flg',EXIST=have_file_b)            !!!
 IF(have_file_b)THEN                                                          !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
+  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.flg',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
   ! Reading tensor sizes                                                     !!!
-  READ(u,IOSTAT=ios) nf                                                      !!!
-  IF(ios.ne.0) STOP 'Error reading nf from fcs in unformatted file!'         !!!
+  READ(u,IOSTAT=ios) i,nf                                                      !!!
+  IF(ios.ne.0) STOP 'Error reading nf from flg in unformatted file!'         !!!
   CLOSE(UNIT=u)                                                              !!!
 ELSE                                                                         !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)            !!!
+  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.flg',EXIST=have_file_f)            !!!
   IF(have_file_f)THEN                                                        !!!
-    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
+    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.flg',STATUS='OLD',ACTION='READ',IOSTAT=ios)
     ! Reading tensor sizes                                                   !!!
-    READ(u,*,IOSTAT=ios) nf                                                  !!!
-    IF(ios.ne.0) STOP 'Error reading nf from fcs in formatted file!'         !!!
+    READ(u,*,IOSTAT=ios) i,nf                                                  !!!
+    IF(ios.ne.0) STOP 'Error reading nf from flg in formatted file!'         !!!
     CLOSE(UNIT=u)                                                            !!!
   ELSE                                                                       !!!
-    STOP 'Error: no .fcs or .b.fcs file found'                               !!!
+    STOP 'Error: no .flg or .b.flg file found'                               !!!
   END IF                                                                     !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_only_nf                                              !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_only_f_in_f(nf,nmax,nface,f_in_f,filename)               !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,nmax                                                !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:),f_in_f(:,:)                       !!!
-INTEGER:: ne,nv,i,u,ios                                                      !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-LOGICAL:: have_file_b,have_file_f                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading fev in f from .fcs                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
-IF(have_file_b)THEN                                                          !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-  READ(u,IOSTAT=ios)  nf,ne,nv,nmax                                                     !!!
-  ALLOCATE(f_in_f(nf,nmax),nface(nf))                                        !!!
-  DO i=1,nf                                                                  !!!
-    READ(u,IOSTAT=ios) nface(i)!,uneq_face(i)                                           !!!
-    READ(u,IOSTAT=ios) f_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) !e_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) !v_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) !b_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) !u_in_f(i,1:nface(i))                                            !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=u)                                                              !!!
-ELSE                                                                         !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)            !!!
-  IF(have_file_f)THEN                                                        !!!
-    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-    READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                                  !!!
-    ALLOCATE(f_in_f(nf,nmax),nface(nf))                                      !!!    
-    DO i=1,nf                                                                !!!
-      READ(u,*,IOSTAT=ios) nface(i)!,uneq_face(i)                                       !!!
-      READ(u,*,IOSTAT=ios) f_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) !e_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) !v_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) !b_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) !u_in_f(i,1:nface(i))                                        !!!
-    END DO                                                                   !!!
-    CLOSE(UNIT=u)                                                            !!!
-  ELSE                                                                       !!!
-    STOP 'Error: no .fcs or .b.fcs file found'                               !!!
-  END IF                                                                     !!!
-END IF                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_only_f_in_f                                          !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_only_ev_in_f(nf,ne,nv,nmax,nface,e_in_f,v_in_f,filename) !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,ne,nv,nmax                                          !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: e_in_f(:,:),v_in_f(:,:)                    !!!
-INTEGER:: i,u,ios                                                            !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-LOGICAL:: have_file_b,have_file_f                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading fev in f from .fcs                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
-IF(have_file_b)THEN                                                          !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-  READ(u,IOSTAT=ios)  nf,ne,nv,nmax                                                     !!!
-  ALLOCATE(e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))                        !!!
-  DO i=1,nf                                                                  !!!
-    READ(u,IOSTAT=ios) nface(i)!,uneq_face(i)                                           !!!
-    READ(u,IOSTAT=ios) !f_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) e_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) v_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) !b_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) !u_in_f(i,1:nface(i))                                            !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=u)                                                              !!!
-ELSE                                                                         !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)            !!!
-  IF(have_file_f)THEN                                                        !!!
-    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-    READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                                  !!!
-    ALLOCATE(e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))                      !!!    
-    DO i=1,nf                                                                !!!
-      READ(u,*,IOSTAT=ios) nface(i)!,uneq_face(i)                                       !!!
-      READ(u,*,IOSTAT=ios) !f_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) e_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) v_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) !b_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) !u_in_f(i,1:nface(i))                                        !!!
-    END DO                                                                   !!!
-    CLOSE(UNIT=u)                                                            !!!
-  ELSE                                                                       !!!
-    STOP 'Error: no .fcs or .b.fcs file found'                               !!!
-  END IF                                                                     !!!
-END IF                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_only_ev_in_f                                         !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE read_fcs_only_fev_in_f(nf,ne,nv,nmax,nface,f_in_f,e_in_f,v_in_f,filename)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-INTEGER,INTENT(OUT):: nf,ne,nv,nmax                                          !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: nface(:)                                   !!!
-INTEGER,ALLOCATABLE,INTENT(OUT):: f_in_f(:,:),e_in_f(:,:),v_in_f(:,:)        !!!
-INTEGER:: i,u,ios                                                            !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-LOGICAL:: have_file_b,have_file_f                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Reading fev in f from .fcs                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
-IF(have_file_b)THEN                                                          !!!
-  OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.b.fcs',FORM='UNFORMATTED',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-  READ(u,IOSTAT=ios)  nf,ne,nv,nmax                                                     !!!
-  IF(ALLOCATED(f_in_f)) stop 'aaaaaaa'
-  IF(ALLOCATED(e_in_f)) stop 'aaaaaaa'
-  IF(ALLOCATED(v_in_f)) stop 'aaaaaaa'
-  IF(ALLOCATED(nface)) stop 'aaaaaaa'
-  ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))        !!!
-  DO i=1,nf                                                                  !!!
-    READ(u,IOSTAT=ios) nface(i)!,uneq_face(i)                                           !!!
-    READ(u,IOSTAT=ios) f_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) e_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) v_in_f(i,1:nface(i))                                             !!!
-    READ(u,IOSTAT=ios) !b_in_f(i,1:nface(i))                                            !!!
-    READ(u,IOSTAT=ios) !u_in_f(i,1:nface(i))                                            !!!
-  END DO                                                                     !!!
-  CLOSE(UNIT=u)                                                              !!!
-ELSE                                                                         !!!
-  INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)            !!!
-  IF(have_file_f)THEN                                                        !!!
-    OPEN(NEWUNIT=u,FILE=TRIM(ADJUSTL(filename))//'.fcs',STATUS='OLD',ACTION='READ',IOSTAT=ios)
-    READ(u,*,IOSTAT=ios) nf,ne,nv,nmax                                                  !!!
-    IF(ALLOCATED(f_in_f)) stop 'aaaaaaa'
-    IF(ALLOCATED(e_in_f)) stop 'aaaaaaa'
-    IF(ALLOCATED(v_in_f)) stop 'aaaaaaa'
-    IF(ALLOCATED(nface)) stop 'aaaaaaa'
-    ALLOCATE(f_in_f(nf,nmax),e_in_f(nf,nmax),v_in_f(nf,nmax),nface(nf))      !!!    
-    DO i=1,nf                                                                !!!
-      READ(u,*,IOSTAT=ios) nface(i)!,uneq_face(i)                                       !!!
-      READ(u,*,IOSTAT=ios) f_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) e_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) v_in_f(i,1:nface(i))                                         !!!
-      READ(u,*,IOSTAT=ios) !b_in_f(i,1:nface(i))                                        !!!
-      READ(u,*,IOSTAT=ios) !u_in_f(i,1:nface(i))                                        !!!
-    END DO                                                                   !!!
-    CLOSE(UNIT=u)                                                            !!!
-  ELSE                                                                       !!!
-    STOP 'Error: no .fcs or .b.fcs file found'                               !!!
-  END IF                                                                     !!!
-END IF                                                                       !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE read_fcs_only_fev_in_f                                        !!!
+END SUBROUTINE read_flg_only_nf                                              !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -798,29 +475,6 @@ IF(i0.eq.2)THEN                                                              !!!
 END IF                                                                       !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END SUBROUTINE read_anc_list                                                 !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE wheretoread(flg,fcs,filename)                                     !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This subroutine reads (from the inp file) the                              !!!
-! filelabel of the filelabel.fev file to be read                             !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-IMPLICIT NONE                                                                !!!
-CHARACTER(LEN=*),INTENT(IN):: filename                                       !!!
-LOGICAL,INTENT(OUT):: flg,fcs                                                !!!
-LOGICAL:: have_file_b,have_file_f                                            !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.flg',EXIST=have_file_b)            !!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.flg',EXIST=have_file_f)              !!!
-flg=.false.                                                                  !!!
-IF(have_file_b.OR.have_file_f) flg=.true.                                   !!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.b.fcs',EXIST=have_file_b)            !!!
-INQUIRE(FILE=TRIM(ADJUSTL(filename))//'.fcs',EXIST=have_file_f)              !!!
-fcs=.false.                                                                  !!!
-IF(have_file_b.OR.have_file_f) fcs=.true.                                   !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END SUBROUTINE wheretoread                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

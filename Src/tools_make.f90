@@ -243,19 +243,18 @@ END SUBROUTINE faces_maker                                                   !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag,neigh_flag,flag_color)
+SUBROUTINE flg_maker(nf,nv,nface,face_edges,face_verts,nflags,flag)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 IMPLICIT NONE                                                                !!!
 INTEGER:: i,j,k,l,l1,l2,nf,nv,nflags                               !!!
 INTEGER:: face_edges(nf,3*nv),face_verts(nf,3*nv),nface(nf)                  !!!
-INTEGER,ALLOCATABLE:: flag(:,:),neigh_flag(:,:),flag_color(:)                !!!
+INTEGER,ALLOCATABLE:: flag(:,:)                !!!
 LOGICAL:: getout                                                             !!!
 LOGICAL,ALLOCATABLE:: ok(:),done(:)                                          !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 nflags=nv*6                                                                  !!!
-ALLOCATE(flag(nflags,3),neigh_flag(nflags,3),flag_color(nflags))             !!!
+ALLOCATE(flag(nflags,-3:3))             !!!
 flag=0                                                                       !!!
-neigh_flag=0                                                                 !!!
 l=0                                                                          !!!
 DO i=1,nf                                                                    !!!
   l1=l+1                                                                     !!!
@@ -276,15 +275,15 @@ DO i=1,nf                                                                    !!!
   l2=l                                                                       !!!
   DO j=l1,l2-1,2                                                             !!!
     ! Edge-neighs                                                            !!!
-    neigh_flag(j,2)=j+1                                                      !!!
-    neigh_flag(j+1,2)=j                                                      !!!
+    flag(j,-2)=j+1                                                      !!!
+    flag(j+1,-2)=j                                                      !!!
     ! Vertex-neighs                                                          !!!
-    neigh_flag(j,3)=j-1                                                      !!!
-    neigh_flag(j+1,3)=j+2                                                    !!!
+    flag(j,-3)=j-1                                                      !!!
+    flag(j+1,-3)=j+2                                                    !!!
   END DO                                                                     !!!
   ! Correcting extreme cases                                                 !!!
-  neigh_flag(l1,3)=l2                                                        !!!
-  neigh_flag(l2,3)=l1                                                        !!!
+  flag(l1,-3)=l2                                                        !!!
+  flag(l2,-3)=l1                                                        !!!
 END DO                                                                       !!!
 IF(l.ne.nflags) STOP 'Missing flags.'                                        !!!
 ! Building Face-neighbors                                                    !!!
@@ -292,20 +291,19 @@ DO i=1,nflags                                                                !!!
   DO j=i+1,nflags                                                            !!!
     IF(flag(i,2).eq.flag(j,2))THEN                                           !!!
       IF(flag(i,3).eq.flag(j,3))THEN                                         !!!
-        neigh_flag(i,1)=j                                                    !!!
-        neigh_flag(j,1)=i                                                    !!!
+        flag(i,-1)=j                                                    !!!
+        flag(j,-1)=i                                                    !!!
       END IF                                                                 !!!
     END IF                                                                   !!!
   END DO                                                                     !!!
 END DO                                                                       !!!
 ! Building flag-colors                                                       !!!
-flag_color=0                                                                 !!!
-flag_color(1)=1                                                              !!!
-flag_color(neigh_flag(1,:))=-1                                               !!!
+flag(1,0)=1                                                              !!!
+flag(flag(1,-3:-1),0)=-1                                               !!!
 ALLOCATE(ok(nflags),done(nflags))                                            !!!
 ok=.false.                                                                   !!!
 ok(1)=.true.                                                                 !!!
-ok(neigh_flag(1,:))=.true.                                                   !!!
+ok(flag(1,-3:-1))=.true.                                                   !!!
 done=.false.                                                                 !!!
 done(1)=.true.                                                               !!!
 DO                                                                           !!!
@@ -313,8 +311,8 @@ DO                                                                           !!!
   DO i=1,nflags                                                              !!!
     IF(done(i)) CYCLE                                                        !!!
     IF(ok(i))THEN                                                            !!!
-      flag_color(neigh_flag(i,:))=-flag_color(i)                             !!!
-      ok(neigh_flag(i,:))=.true.                                             !!!
+      flag(flag(i,-3:-1),0)=-flag(i,0)                             !!!
+      ok(flag(i,-3:-1))=.true.                                             !!!
       done(i)=.true.                                                         !!!
       getout=.false.                                                         !!!
     END IF                                                                   !!!
