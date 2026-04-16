@@ -185,37 +185,7 @@ DO i=i0,nf                                                                   !!!
   !  Writing cfl                                                         !!!
   CALL write_cfl(nflags1,cflag1,filename_list(i))
   
-  ! Writing Vincent format
-  OPEN(NEWUNIT=v1,FILE=TRIM(ADJUSTL(filename_list(i)))//'.sym')
-  READ(v1,*,IOSTAT=v2) group
-  CLOSE(UNIT=v1)  
-IF(v2.eq.0)THEN  
-  OPEN(NEWUNIT=v1,FILE=TRIM(ADJUSTL(filename_list(i)))//'.txt')
-  ALLOCATE(A(nv1,nv1))
-  A=0
-  DO vi=1,nflags1
-    A(flag1(vi,3),flag1(flag1(vi,-3),3))=1
-    A(flag1(flag1(vi,-3),3),flag1(vi,3))=1
-  END DO
-  DO vi=1,nv1
-    DO vj=1,nv1
-      IF(A(vi,vj).eq.1) WRITE(v1,'(I0,1X,I0)') vi-1,vj-1
-    END DO
-  END DO
-  WRITE(v1,*)
-  DO vi=1,nv1
-    WRITE(v1,'(A,1X,F9.7,1X,F9.7,1X,F9.7)') 'C',rk(vi,:),0.0
-  END DO
-  WRITE(v1,*)   
-  WRITE(v1,'(F9.7,1X,F9.7,1X,F9.7,1X,A)') 1.0D0,0.0D0,0.0D0,'True'
-  WRITE(v1,'(F9.7,1X,F9.7,1X,F9.7,1X,A)') 0.0D0,1.0D0,0.0D0,'True'
-  WRITE(v1,'(F9.7,1X,F9.7,1X,F9.7,1X,A)') 0.0D0,0.0D0,1.0D0,'False'
-  WRITE(v1,'(A)') group
-  WRITE(v1,*) 
-  CLOSE(UNIT=vj)
-  DEALLOCATE(A)
-END IF  
-  
+
   
   DEALLOCATE(rp,nface0,flag0,cflag0)              !!!
   DEALLOCATE(rk,nface1,flag1,cflag1)              !!!
