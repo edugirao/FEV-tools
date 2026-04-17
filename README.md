@@ -2,15 +2,11 @@
 ![logo](Doc/figs/fevtools.png)
 Fortran-written collection of tools to work with embedding tensors representing 3-regular graphs (analogous to 2D nanocarbon structures made solely of tricoordinated atoms). 
 
-It deals with a simple .fev format for the tensor and with the related .flg/.fcs formats associated with more complex entities describing the 3-regular graphs (flag graph/faces info set).
+It deals with a simple .fev format for the tensor and with the related .flg format for the flag graph describing the 3-regular graphs.
 
-The following tools perform simple conversions for the .fev, .flg, and .fcs formats:
-- fev2flg - embedding-tensor to flag-graph
-- fev2fcs - embedding-tensor to faces-info
-- flg2fev - flag-graph to embedding-tensor
-- flg2fcs - flag-graph to faces-info
-- fcs2fev - faces-info to embedding-tensor
-- fcs2flg - faces-info to flag-graph
+The following tools perform simple conversions for the .fev and .flg, formats:
+- fev2flg - embedding-tensor to flag-graph
+- flg2fev - flag-graph to embedding-tensor
 - for2bin - binary from/to formatted conversion
     
 In addition, the following tools perform specific tasks:
@@ -20,9 +16,9 @@ In addition, the following tools perform specific tasks:
 - flg2pri - reduction to the primitive cell
 - flg2svg - flag-graph illustration
 - flg2sym - symmetry check
-- fcs2gen - structure generation 
-- fcs2smb - polygonal symbol generation
-- fcs2xyz - coordinates generation
+- flg2gen - structure generation 
+- flg2smb - polygonal symbol generation
+- flg2xyz - coordinates generation
 - flg4xyz - files generation from coordinates
 
 The package consists of a Src folder with the source code files and a makefile. It also includes a Doc folder with the user guide and an Examples folder containing the .fev files of a few illustrative structures (along with the corresponding files for the coordinates and lattice vectors).
